@@ -52,7 +52,7 @@ export const CONSTANTS = {
 
   // Device Count Range
   DEVICE_COUNT_MIN: 1,
-  DEVICE_COUNT_MAX: 500,
+  DEVICE_COUNT_MAX: 1000,
 
   // Server Thresholds
   SERVER_DEGRADED_THRESHOLD: 90,
