@@ -355,9 +355,9 @@ test.describe('Canvas Rendering - Packet Trajectory', () => {
 });
 
 test.describe('Canvas Rendering - Integration with MCP', () => {
-  test('MCP server integration test', async ({ page }) => {
-    test.skip(!MCP_SERVER_URL, 'Skipping MCP integration test when MCP_SERVER_URL is not set');
+  test.skip(!MCP_SERVER_URL, 'Skipping MCP integration test when MCP_SERVER_URL is not set');
 
+  test('MCP server integration test', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
