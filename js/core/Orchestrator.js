@@ -1,7 +1,7 @@
 import { CONSTANTS } from '../constants.js';
 import GenuineTraffic from '../models/GenuineTraffic.js';
 import Attacker from '../models/Attacker.js';
-import Server from '../models/Server.js';
+import Server, { DROPPED_PACKET_TTL_SECONDS } from '../models/Server.js';
 import Firewall from '../models/Firewall.js';
 
 export default class Orchestrator {
@@ -85,7 +85,7 @@ export default class Orchestrator {
           // Mark as dropped due to timeout (collision/congestion)
           particle.droppedByCollision = true;
           // v1.1: Use method to track dropped packet with TTL
-          this.server.droppedPacketEvents.push({ ttl: 10 }); // same TTL as in Server.js
+          this.server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
           this.server.updateHappiness();
           this.logAnalyzerEvent({
             ip: particle.sourceIP,
@@ -157,7 +157,7 @@ export default class Orchestrator {
       
       // If legitimate packet was blocked, count as dropped (v1.1: with TTL)
       if (!particle.isMalicious) {
-        this.server.droppedPacketEvents.push({ ttl: 10 }); // same TTL as in Server.js
+        this.server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
         this.server.updateHappiness();
       }
       return;
@@ -185,7 +185,7 @@ export default class Orchestrator {
     } else {
       // Crash short-circuit: server crashed, all packets are dropped
       if (!particle.isMalicious) {
-        this.server.droppedPacketEvents.push({ ttl: 10 }); // v1.1: with TTL
+        this.server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
         this.server.updateHappiness();
       }
       this.logAnalyzerEvent({

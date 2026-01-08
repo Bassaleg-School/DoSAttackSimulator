@@ -2,7 +2,7 @@ import { PACKET_TYPES, SERVER_STATUS, CONSTANTS } from '../constants.js';
 import { clamp } from '../utils.js';
 
 const LOAD_PER_PACKET = 1;
-const DROPPED_PACKET_TTL_SECONDS = 10; // v1.1: dropped packets age out after 10 seconds
+export const DROPPED_PACKET_TTL_SECONDS = 10; // v1.1: dropped packets age out after 10 seconds
 
 export default class Server {
   constructor() {
@@ -140,7 +140,7 @@ export default class Server {
     if (enabled) {
       this.publicIP = CONSTANTS.PROXY_PUBLIC_IP;
     } else {
-      this.publicIP = CONSTANTS.VICTIM_ORIGIN_IP;
+      this.publicIP = CONSTANTS.VICTIM_PUBLIC_IP;
     }
   }
 }
