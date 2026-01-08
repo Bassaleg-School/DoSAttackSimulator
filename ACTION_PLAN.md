@@ -20,15 +20,16 @@ Status:
 - Implemented Tailwind/Vitest tooling, initial layout scaffold, and generated `css/main.css`.
 - `npm test` passing (sample assertion), `npm run build:css` generates CSS.
 
-### 2) Constants & Utilities
+### 2) Constants & Utilities ✅
 Deliverables:
 - `js/constants.js` with all values from SPEC (ranges, colors, thresholds).
 - `js/utils.js` helpers: `clamp`, random IP generator avoiding 172.16.0.x, subnet extractor (/24), rand choice.
+Status:
+- Added enums for packet/attack/status/protocols and full constants table aligned to SPEC.
+- Implemented utility helpers (`clamp`, random IP generation with exclusion, /24 subnet extraction, random choice, sequential IP helper) with Vitest coverage.
 Tests:
-- Constants keys exist with correct types/ranges (table-driven expectations).
-- `clamp` bounds correctly (below/within/above cases).
-- IP generator never returns 172.16.0.*; returns string in IPv4 dotted form.
-- Subnet extractor returns first three octets.
+- Constants value snapshot and range checks pass.
+- Utility suite validates clamping, IP generation exclusion, subnet extraction, random choice, and sequential IPs.
 
 ### 3) Models: Packet & GenuineTraffic
 Deliverables:

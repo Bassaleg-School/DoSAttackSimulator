@@ -1,0 +1,87 @@
+import { describe, it, expect } from 'vitest';
+import CONSTANTS, { PACKET_TYPES, ATTACK_TYPES, SERVER_STATUS, PROTOCOLS } from '../js/constants.js';
+
+describe('constants', () => {
+  const expected = {
+    VICTIM_IP: '203.0.113.10',
+    GENUINE_USER_COUNT: 50,
+    GENUINE_PACKETS_PER_USER_PER_SEC: 1,
+    GENUINE_IP_PREFIX: '172.16.0',
+    ATTACK_RATE_UDP: 10,
+    ATTACK_RATE_ICMP: 8,
+    ATTACK_RATE_TCP_SYN: 5,
+    BANDWIDTH_MULTIPLIER_MIN: 0.5,
+    BANDWIDTH_MULTIPLIER_MAX: 2.0,
+    DEVICE_COUNT_MIN: 1,
+    DEVICE_COUNT_MAX: 1000,
+    SERVER_DEGRADED_THRESHOLD: 90,
+    SERVER_CRASHED_THRESHOLD: 99,
+    SERVER_RECOVERY_THRESHOLD: 90,
+    BANDWIDTH_DECAY_RATE: 10,
+    CPU_DECAY_RATE: 2,
+    RATE_LIMIT_DEFAULT: 20,
+    RATE_LIMIT_MIN: 5,
+    RATE_LIMIT_MAX: 50,
+    HAPPINESS_PENALTY_PER_DROP: 2,
+    DEVICES_PER_SUBNET: 20,
+    SYN_CONNECTION_TTL_SECONDS: 15,
+    MAX_ACTIVE_CONNECTIONS: 100,
+    CANVAS_WIDTH: 1000,
+    CANVAS_HEIGHT: 400,
+    PIPE_WIDTH: 800,
+    PIPE_HEIGHT: 80,
+    UI_MIN_VIEWPORT_WIDTH: 1200,
+    UI_CONTROL_BAR_HEIGHT: 56,
+    UI_PANEL_LEFT_WIDTH: 320,
+    UI_PANEL_RIGHT_WIDTH: 380,
+    UI_PANEL_LEFT_MIN_WIDTH: 260,
+    UI_PANEL_RIGHT_MIN_WIDTH: 320,
+    UI_MIDDLE_MIN_WIDTH: 520,
+    UI_PANEL_GAP: 16,
+    UI_PANEL_PADDING: 16,
+    UI_BORDER_RADIUS: 12,
+    UI_LOG_MAX_ENTRIES: 50,
+    UI_ANALYZER_LOG_MAX_PER_SECOND: 10,
+    UI_THEME_MODE: 'dark',
+    UI_THEME_BG: 'slate-950',
+    UI_THEME_SURFACE: 'slate-900',
+    UI_THEME_SURFACE_ALT: 'slate-800',
+    UI_THEME_TEXT: 'slate-100',
+    UI_THEME_TEXT_MUTED: 'slate-300',
+    UI_THEME_BORDER: 'slate-700',
+    UI_THEME_ACCENT: 'emerald-400',
+    UI_THEME_WARNING: 'amber-400',
+    UI_THEME_DANGER: 'red-400',
+    SPEED_LEGITIMATE: 150,
+    SPEED_MALICIOUS: 200,
+    BANDWIDTH_COLLISION_THRESHOLD: 95,
+    MAX_ACTIVE_PARTICLES: 1500,
+    VISUAL_SPAWN_CAP_PER_SECOND: 300,
+    COLOR_LEGITIMATE: '#22C55E',
+    COLOR_UDP: '#EF4444',
+    COLOR_ICMP: '#F97316',
+    COLOR_TCP_SYN: '#EF4444',
+    COLOR_BLOCKED: '#6B7280',
+    COLOR_TIMEOUT: '#000000'
+  };
+
+  it('includes all specified keys with correct values', () => {
+    Object.entries(expected).forEach(([key, value]) => {
+      expect(CONSTANTS[key]).toEqual(value);
+    });
+  });
+
+  it('has sensible ranges and thresholds', () => {
+    expect(CONSTANTS.BANDWIDTH_MULTIPLIER_MIN).toBeLessThan(CONSTANTS.BANDWIDTH_MULTIPLIER_MAX);
+    expect(CONSTANTS.DEVICE_COUNT_MIN).toBeLessThan(CONSTANTS.DEVICE_COUNT_MAX);
+    expect(CONSTANTS.SERVER_RECOVERY_THRESHOLD).toBeLessThanOrEqual(CONSTANTS.SERVER_DEGRADED_THRESHOLD);
+    expect(CONSTANTS.SERVER_DEGRADED_THRESHOLD).toBeLessThan(CONSTANTS.SERVER_CRASHED_THRESHOLD);
+  });
+
+  it('exposes enums for packet, attack, server status, and protocols', () => {
+    expect(PACKET_TYPES).toMatchObject({ HTTP_GET: 'HTTP_GET', UDP: 'UDP', ICMP: 'ICMP', TCP_SYN: 'TCP_SYN' });
+    expect(ATTACK_TYPES).toMatchObject({ UDP: 'UDP', ICMP: 'ICMP', TCP_SYN: 'TCP_SYN' });
+    expect(SERVER_STATUS).toMatchObject({ ONLINE: 'ONLINE', DEGRADED: 'DEGRADED', CRASHED: 'CRASHED' });
+    expect(PROTOCOLS).toMatchObject({ TCP: 'TCP', UDP: 'UDP', ICMP: 'ICMP' });
+  });
+});
