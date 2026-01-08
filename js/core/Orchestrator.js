@@ -46,9 +46,7 @@ export default class Orchestrator {
 
     // Spawn attack traffic if attacking
     if (this.attacker.isAttacking) {
-      const { packets: attackPackets } = this.attacker.spawnPackets(dt);
-      // v1.2: Set destination IP to attacker's target IP
-      attackPackets.forEach(p => p.destinationIP = this.attacker.targetIP);
+      const { packets: attackPackets } = this.attacker.spawnPackets(dt, this.attacker.targetIP);
       this.addParticles(attackPackets);
     }
 
