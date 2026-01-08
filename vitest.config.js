@@ -8,7 +8,7 @@ export default defineConfig({
       '**/dist/**',
       '**/playwright-report/**',
       '**/test-results/**',
-      '**/tests/visual/**' // Exclude Playwright visual tests
+      '**/tests/visual/**' // Exclude visual test directory (Playwright tests)
     ]
   }
 });
