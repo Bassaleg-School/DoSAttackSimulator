@@ -17,6 +17,7 @@ export default class EventHandlers {
       // Attacker controls
       sliderDeviceCount: document.getElementById('slider-device-count'),
       dropdownAttackType: document.getElementById('dropdown-attack-type'),
+      inputTargetIP: document.getElementById('input-target-ip'),
       sliderAttackBandwidth: document.getElementById('slider-attack-bandwidth'),
       
       // Firewall controls
@@ -87,6 +88,7 @@ export default class EventHandlers {
         if (this.elements.sliderDeviceCount) this.elements.sliderDeviceCount.value = 1;
         if (this.elements.sliderAttackBandwidth) this.elements.sliderAttackBandwidth.value = 1.0;
         if (this.elements.dropdownAttackType) this.elements.dropdownAttackType.value = 'UDP';
+        if (this.elements.inputTargetIP) this.elements.inputTargetIP.value = '203.0.113.10';
         this.uiManager.updateAttackerInfo(1, 1.0);
       });
     }
@@ -115,6 +117,12 @@ export default class EventHandlers {
         }
         
         this.orchestrator.attacker.attackType = selectedAttackType;
+      });
+    }
+
+    if (this.elements.inputTargetIP) {
+      this.elements.inputTargetIP.addEventListener('input', (e) => {
+        this.orchestrator.attacker.targetIP = e.target.value;
       });
     }
 
