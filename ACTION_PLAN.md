@@ -31,14 +31,14 @@ Tests:
 - Constants value snapshot and range checks pass.
 - Utility suite validates clamping, IP generation exclusion, subnet extraction, random choice, and sequential IPs.
 
-### 3) Models: Packet & GenuineTraffic
+### 3) Models: Packet & GenuineTraffic ✅
 Deliverables:
-- `Packet` class with properties: position, speed, type enum, isMalicious, sourceIP, payloadSize, optional `trafficWeight`.
-- `GenuineTraffic` producing 50 HTTP_GET packets/sec from 172.16.0.1-50 evenly/randomly.
+- `Packet` class with position, speed, type enum, isMalicious inference for HTTP_GET, sourceIP, payloadSize, optional `trafficWeight`.
+- `GenuineTraffic` producing 50 HTTP_GET packets/sec from 172.16.0.1-50 evenly/randomly with accumulator handling fractional dt.
+Status:
+- Implemented Packet model and GenuineTraffic generator with sequential IP pool and spawn accumulator.
 Tests:
-- Packet defaults align to inputs; `isMalicious` false for HTTP_GET.
-- Generated IPs stay in 172.16.0.1-50 inclusive.
-- Rate math: 50 packets/sec total from 50 users.
+- Packet defaults/isMalicious inference verified; IP ranges bounded to 172.16.0.1-50; rate math matches 50 pps with fractional dt accumulation.
 
 ### 4) Attacker Model
 Deliverables:
