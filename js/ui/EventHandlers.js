@@ -107,7 +107,7 @@ export default class EventHandlers {
   attachAttackerControls() {
     if (this.elements.sliderDeviceCount) {
       this.elements.sliderDeviceCount.addEventListener('input', (e) => {
-        const value = parseInt(e.target.value, 10);
+        const value = Number.parseInt(e.target.value, 10);
         this.orchestrator.attacker.deviceCount = value;
         this.uiManager.updateAttackerInfo(value, this.orchestrator.attacker.bandwidthMultiplier);
       });
@@ -138,7 +138,7 @@ export default class EventHandlers {
 
     if (this.elements.sliderAttackBandwidth) {
       this.elements.sliderAttackBandwidth.addEventListener('input', (e) => {
-        const value = parseFloat(e.target.value);
+        const value = Number.parseFloat(e.target.value);
         this.orchestrator.attacker.bandwidthMultiplier = value;
         this.uiManager.updateAttackerInfo(this.orchestrator.attacker.deviceCount, value);
       });
@@ -148,7 +148,7 @@ export default class EventHandlers {
   attachServerControls() {
     if (this.elements.sliderServerCapacity) {
       this.elements.sliderServerCapacity.addEventListener('input', (e) => {
-        const value = parseFloat(e.target.value);
+        const value = Number.parseFloat(e.target.value);
         this.orchestrator.server.bandwidthCapacityMultiplier = value;
         // Update the UI label
         const label = document.getElementById('server-capacity-value');
@@ -223,7 +223,7 @@ export default class EventHandlers {
 
     if (this.elements.sliderRateLimit) {
       this.elements.sliderRateLimit.addEventListener('input', (e) => {
-        const value = parseInt(e.target.value, 10);
+        const value = Number.parseInt(e.target.value, 10);
         this.orchestrator.firewall.rateLimitThreshold = value;
         if (this.uiManager.elements.rateLimitValue) {
           this.uiManager.elements.rateLimitValue.textContent = value;
