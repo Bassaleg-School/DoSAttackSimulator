@@ -15,8 +15,8 @@ export default defineConfig({
   expect: {
     timeout: 5000,
     toMatchSnapshot: {
-      threshold: 0.2, // Allow 20% pixel difference for anti-aliasing
-      maxDiffPixels: 100
+      threshold: 0.05, // Allow up to 5% pixel difference for anti-aliasing
+      maxDiffPixels: 20
     }
   },
 
