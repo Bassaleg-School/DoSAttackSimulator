@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Firewall from '../../js/models/Firewall.js';
-import { PACKET_TYPES, PROTOCOLS, CONSTANTS } from '../../js/constants.js';
+import { PACKET_TYPES, PROTOCOLS } from '../../js/constants.js';
 
 function makePacket(type, sourceIP = '45.33.12.5') {
   return { type, sourceIP };
