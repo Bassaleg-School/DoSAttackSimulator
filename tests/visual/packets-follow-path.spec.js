@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { chromium } from 'playwright';
-
 /**
  * Visual regression tests for canvas rendering
  * 
