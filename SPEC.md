@@ -1,10 +1,10 @@
 # **Functional Specification: Interactive DoS/DDoS Attack Simulator**
 
 ---
-Spec-Version: 1.4.0
+Spec-Version: 1.5.0
 Last-Updated: 2026-01-08
 Changelog: CHANGELOG.md
-Summary: Adds packet visual scaling, network node badges (attackers/legit/proxy/origin), and aligns metrics with aggregate badge counts
+Summary: Improves network visualization with trajectory-based particle spawning, cluster rendering for multi-device nodes, and adds Playwright visual regression tests with MCP integration
 ---
 
 ## **1\. Pedagogical Overview & Curriculum Links**
@@ -53,6 +53,21 @@ The screen is divided into three distinct columns to represent the flow of data.
       * *Volume Attack:* Swarms of red/orange squares physically blocking green circles.  
       * *Protocol Attack:* Red triangles arrive and turn into "lock" icons (🔒) on the server, staying there.  
 * **Network Nodes (v1.3):** Show four glyphs on/around the canvas: **Attackers** (left cluster badge = malicious device count), **Legit Users** (left cluster badge = 50), **Proxy** (when enabled, badge = current Public IP with a UI toggle to switch the badge to the aggregate in-flight count), and **Origin Server** (right, status badge). Connect them with lines that glow for allowed flow and dim/pulse when blocked.  
+* **Particle Spawning & Trajectory (v1.5):** Each particle spawns from its source cluster area with deterministic position and velocity:
+  * **Attacker packets** spawn from the top-left cluster (centered at y = centerY - 60) with random scatter within cluster radius (15px)
+  * **Legitimate packets** spawn from the bottom-left cluster (centered at y = centerY + 60) with random scatter within cluster radius (15px)
+  * **Velocity vector** is computed as `normalize(destination - spawnPosition) * speed` where destination is either the proxy node (when enabled) or the origin server
+  * Particles follow their velocity vector rather than fixed horizontal lanes, creating visually accurate paths from source to destination
+  * When proxy is enabled, particles redirect from proxy to origin after passing inspection
+* **Cluster Rendering (v1.5):** Node badges render cluster visualization when `deviceCount > 1`:
+  * Up to 8 visual dots arranged in a circle around the node center (radius 40px)
+  * Dots are semi-transparent and color-matched to the node badge
+  * Numeric badge shows actual device count
+  * Packet spawn positions align with cluster area
+* **Debug Overlay (v1.5):** When `window.__SIM_TEST_HOOKS__.debugOverlay` is enabled (test-only):
+  * Yellow velocity vectors show particle direction and magnitude
+  * Green spawn point markers show particle origin
+  * Cluster radius circles outline spawn areas
 * **Particle Legend:** A static legend displayed below the canvas showing:  
   * ● Green Circle = Legitimate HTTP Traffic  
   * ■ Red Square = UDP Flood Packet  

@@ -4,6 +4,8 @@ export default class Packet {
   constructor({
     x = 0,
     y = 0,
+    vx = undefined, // velocity x component (set by Orchestrator during initialization)
+    vy = undefined, // velocity y component (set by Orchestrator during initialization)
     speed = 0,
     type = PACKET_TYPES.HTTP_GET,
     isMalicious,
@@ -15,6 +17,8 @@ export default class Packet {
   } = {}) {
     this.x = x;
     this.y = y;
+    this.vx = vx;
+    this.vy = vy;
     this.speed = speed;
     this.type = type;
     // Default malicious flag based on packet type when not provided explicitly

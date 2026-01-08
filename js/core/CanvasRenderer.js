@@ -8,7 +8,7 @@ export default class CanvasRenderer {
     this.canvas.height = CONSTANTS.CANVAS_HEIGHT;
   }
 
-  drawBadgeNode({ x, y, label, sublabel, color }) {
+  drawBadgeNode({ x, y, label, sublabel, color, deviceCount }) {
     const ctx = this.ctx;
     ctx.fillStyle = '#0f172a';
     ctx.strokeStyle = color;
@@ -28,6 +28,40 @@ export default class CanvasRenderer {
     if (sublabel) {
       ctx.font = '10px monospace';
       ctx.fillText(sublabel, x, y + 10);
+    }
+    
+    // Draw cluster dots for multi-device nodes
+    if (deviceCount && deviceCount > 1) {
+      this.drawClusterDots(x, y, deviceCount, color);
+    }
+  }
+  
+  drawClusterDots(centerX, centerY, deviceCount, color) {
+    const ctx = this.ctx;
+    const maxVisualDots = 8;
+    const dotCount = Math.min(deviceCount, maxVisualDots);
+    const clusterRadius = 40;
+    const dotRadius = 3;
+    
+    ctx.fillStyle = color + '80'; // Semi-transparent
+    
+    for (let i = 0; i < dotCount; i++) {
+      const angle = (i / dotCount) * Math.PI * 2;
+      const x = centerX + Math.cos(angle) * clusterRadius;
+      const y = centerY + Math.sin(angle) * clusterRadius;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Draw debug overlay if test hooks enabled
+    if (typeof window !== 'undefined' && window.__SIM_TEST_HOOKS__?.debugOverlay) {
+      ctx.strokeStyle = color + '40';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, clusterRadius, 0, Math.PI * 2);
+      ctx.stroke();
     }
   }
 
@@ -278,9 +312,23 @@ export default class CanvasRenderer {
       this.drawConnection({ fromX: leftX, fromY: centerY + 60, toX: rightX, toY: centerY, active: origin?.status !== 'CRASHED' });
     }
 
-    // Attacker / Legit badges
-    this.drawBadgeNode({ x: leftX, y: centerY - 60, label: 'ATT', sublabel: attackerLabel, color: '#ef4444' });
-    this.drawBadgeNode({ x: leftX, y: centerY + 60, label: 'LEG', sublabel: legitLabel, color: '#22c55e' });
+    // Attacker / Legit badges with cluster dots
+    this.drawBadgeNode({ 
+      x: leftX, 
+      y: centerY - 60, 
+      label: 'ATT', 
+      sublabel: attackerLabel, 
+      color: '#ef4444',
+      deviceCount: attackerCount
+    });
+    this.drawBadgeNode({ 
+      x: leftX, 
+      y: centerY + 60, 
+      label: 'LEG', 
+      sublabel: legitLabel, 
+      color: '#22c55e',
+      deviceCount: legitUserCount
+    });
 
     // Proxy badge
     if (proxy?.enabled) {
@@ -294,5 +342,29 @@ export default class CanvasRenderer {
     const originSublabel = origin?.ip;
     const originColor = origin?.status === 'CRASHED' ? '#f97316' : '#22d3ee';
     this.drawBadgeNode({ x: rightX, y: centerY, label: originLabel, sublabel: originSublabel, color: originColor });
+    
+    // Draw debug velocity vectors if enabled
+    if (typeof window !== 'undefined' && window.__SIM_TEST_HOOKS__?.debugOverlay && state.particles) {
+      this.drawDebugOverlay(state.particles);
+    }
+  }
+  
+  drawDebugOverlay(particles) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = '#ffff0080';
+    ctx.lineWidth = 1;
+    
+    for (const particle of particles.slice(0, 20)) { // Limit to first 20 for clarity
+      if (particle.vx !== undefined && particle.vy !== undefined) {
+        ctx.beginPath();
+        ctx.moveTo(particle.x, particle.y);
+        ctx.lineTo(particle.x + particle.vx * 10, particle.y + particle.vy * 10);
+        ctx.stroke();
+        
+        // Draw spawn point marker
+        ctx.fillStyle = '#00ff0040';
+        ctx.fillRect(particle.x - 2, particle.y - 2, 4, 4);
+      }
+    }
   }
 }
