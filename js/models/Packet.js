@@ -25,19 +25,4 @@ export default class Packet {
     this.payloadSize = payloadSize;
     this.trafficWeight = trafficWeight;
   }
-
-  clone() {
-    return new Packet({
-      x: this.x,
-      y: this.y,
-      speed: this.speed,
-      type: this.type,
-      isMalicious: this.isMalicious,
-      sourceIP: this.sourceIP,
-      destinationIP: this.destinationIP,
-      clientIP: this.clientIP,
-      payloadSize: this.payloadSize,
-      trafficWeight: this.trafficWeight
-    });
-  }
 }
