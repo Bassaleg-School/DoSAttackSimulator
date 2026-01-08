@@ -127,8 +127,8 @@ export default class Orchestrator {
       if (!particle.clientIP) {
         particle.clientIP = particle.sourceIP;
       }
-      // Change sourceIP to proxy egress IP
-      const proxyEgressHost = Math.floor(Math.random() * 256);
+      // Change sourceIP to proxy egress IP (random host in proxy egress network)
+      const proxyEgressHost = Math.floor(Math.random() * 256); // 0-255 (standard IP octet range)
       particle.sourceIP = `${CONSTANTS.PROXY_EGRESS_IP_PREFIX}.${proxyEgressHost}`;
       particle.isForwarded = true; // Mark for visualization
     } else if (particle.destinationIP !== this.server.publicIP) {
