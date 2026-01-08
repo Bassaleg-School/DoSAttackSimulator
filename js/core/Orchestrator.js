@@ -80,7 +80,8 @@ export default class Orchestrator {
         if (!particle.isMalicious && this.server.bandwidthUsage > CONSTANTS.BANDWIDTH_COLLISION_THRESHOLD) {
           // Mark as dropped due to timeout (collision/congestion)
           particle.droppedByCollision = true;
-          this.server.droppedPackets += 1;
+          // v1.1: Use method to track dropped packet with TTL
+          this.server.droppedPacketEvents.push({ ttl: 10 }); // same TTL as in Server.js
           this.server.updateHappiness();
           this.logAnalyzerEvent({
             ip: particle.sourceIP,
@@ -116,9 +117,9 @@ export default class Orchestrator {
         reason: firewallResult.reason
       });
       
-      // If legitimate packet was blocked, count as dropped
+      // If legitimate packet was blocked, count as dropped (v1.1: with TTL)
       if (!particle.isMalicious) {
-        this.server.droppedPackets += 1;
+        this.server.droppedPacketEvents.push({ ttl: 10 }); // same TTL as in Server.js
         this.server.updateHappiness();
       }
       return;
@@ -146,7 +147,7 @@ export default class Orchestrator {
     } else {
       // Crash short-circuit: server crashed, all packets are dropped
       if (!particle.isMalicious) {
-        this.server.droppedPackets += 1;
+        this.server.droppedPacketEvents.push({ ttl: 10 }); // v1.1: with TTL
         this.server.updateHappiness();
       }
       this.logAnalyzerEvent({

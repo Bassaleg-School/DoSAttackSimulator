@@ -45,4 +45,97 @@ describe('Server', () => {
     expect(server.droppedPackets).toBe(1);
     expect(server.happinessScore).toBe(100 - CONSTANTS.HAPPINESS_PENALTY_PER_DROP);
   });
+
+  // v1.1 Tests: Happiness Recovery
+  it('happiness recovers gradually as dropped packets age out after server recovers', () => {
+    const server = new Server();
+    
+    // Crash the server and drop 10 packets
+    server.bandwidthUsage = 100;
+    server.update(0);
+    for (let i = 0; i < 10; i++) {
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+    }
+    expect(server.droppedPackets).toBe(10);
+    expect(server.happinessScore).toBe(100 - 10 * CONSTANTS.HAPPINESS_PENALTY_PER_DROP);
+    const initialHappiness = server.happinessScore;
+    
+    // Server recovers (load drops)
+    server.bandwidthUsage = 0;
+    server.update(0);
+    expect(server.status).toBe(SERVER_STATUS.ONLINE);
+    
+    // Happiness should start recovering as time passes and old drops age out
+    // Simulate time passing (multiple update cycles) - need to wait for TTL to expire (10 seconds)
+    for (let i = 0; i < 11; i++) {
+      server.update(1);
+    }
+    
+    // Happiness should have improved (dropped packets aged out)
+    expect(server.happinessScore).toBeGreaterThan(initialHappiness);
+    // Should be close to 100 now
+    expect(server.happinessScore).toBeGreaterThanOrEqual(90);
+  });
+
+  it('happiness does not recover while genuine users are still being blocked by firewall rules', () => {
+    const server = new Server();
+    
+    // Drop some packets
+    server.bandwidthUsage = 100;
+    server.update(0);
+    for (let i = 0; i < 5; i++) {
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+    }
+    const initialHappiness = server.happinessScore;
+    
+    // Server recovers
+    server.bandwidthUsage = 0;
+    server.update(0);
+    
+    // But continue to drop packets (e.g., firewall blocking)
+    server.droppedPackets += 1;
+    server.update(1);
+    
+    // Happiness should not improve if packets are still being dropped
+    expect(server.happinessScore).toBeLessThanOrEqual(initialHappiness);
+  });
+
+  it('happiness clamps to 0-100 range during recovery', () => {
+    const server = new Server();
+    
+    // Drop many packets to drive happiness to 0
+    server.bandwidthUsage = 100;
+    server.update(0);
+    for (let i = 0; i < 60; i++) {
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+    }
+    expect(server.happinessScore).toBe(0);
+    
+    // Server recovers and time passes
+    server.bandwidthUsage = 0;
+    for (let i = 0; i < 100; i++) {
+      server.update(1);
+    }
+    
+    // Happiness should recover but stay clamped at 100
+    expect(server.happinessScore).toBeLessThanOrEqual(100);
+    expect(server.happinessScore).toBeGreaterThan(0);
+  });
+
+  it('reset simulation restores happiness to 100', () => {
+    const server = new Server();
+    
+    // Drop packets
+    server.bandwidthUsage = 100;
+    server.update(0);
+    for (let i = 0; i < 10; i++) {
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+    }
+    expect(server.happinessScore).toBeLessThan(100);
+    
+    // Reset should restore happiness
+    server.reset();
+    expect(server.happinessScore).toBe(100);
+    expect(server.droppedPackets).toBe(0);
+  });
 });
