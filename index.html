@@ -24,6 +24,96 @@
   </header>
 
   <main class="max-w-screen-2xl mx-auto px-6 py-6">
+      
+      <!-- Top Panel: Firewall & Mitigation -->
+      <section id="panel-firewall" class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+        <div>
+          <h2 class="text-lg font-semibold mb-3">Firewall & Mitigation</h2>
+        </div>
+        
+        <div id="firewall-dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Group 1: Blocking Rules -->
+            <div class="space-y-4">
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 mb-2">Block Protocols</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="check-block-tcp" class="mr-2">
+                            <span>Block TCP</span>
+                            <span class="ml-auto text-xs text-amber-400">⚠ Blocks web</span>
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="check-block-udp" class="mr-2">
+                            <span>Block UDP</span>
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="check-block-icmp" class="mr-2">
+                            <span>Block ICMP</span>
+                        </label>
+                    </div>
+                </div>
+                <!-- IP Blacklist -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 mb-2">Detected Subnets</h4>
+                    <div id="ip-blacklist" class="text-xs font-mono text-slate-400 max-h-32 overflow-y-auto space-y-1 bg-slate-950/50 p-2 rounded border border-slate-800">
+                        <p class="text-slate-500">No traffic detected</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group 2: Rate Limiting -->
+            <div>
+                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Rate Limiting</h4>
+                 <div class="space-y-4">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" id="check-rate-limit" class="mr-2">
+                        <span>Enable Rate Limiting</span>
+                    </label>
+                    <div id="rate-limit-controls" class="hidden space-y-2 pl-4 border-l-2 border-slate-800">
+                        <label class="block text-xs text-slate-400">Threshold: <span id="rate-limit-value" class="text-emerald-400">20</span> req/s</label>
+                        <input type="range" id="slider-rate-limit" min="5" max="50" value="20" class="w-full">
+                        <label class="block text-xs text-slate-400 mt-2">Apply To:</label>
+                        <select id="dropdown-rate-limit-scope" class="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-100">
+                            <option value="ALL">All Protocols</option>
+                            <option value="TCP">TCP Only</option>
+                            <option value="UDP">UDP Only</option>
+                            <option value="ICMP">ICMP Only</option>
+                        </select>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Group 3: Architecture Mitigations -->
+            <div>
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">Infrastructure</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="check-load-balancing" class="mr-2">
+                            <span>Load Balancing</span>
+                        </label>
+                        <p class="text-xs text-slate-500 ml-6 mt-1">Doubles bandwidth capacity</p>
+                    </div>
+                    <div>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" id="check-reverse-proxy" class="mr-2">
+                            <span>Reverse Proxy Protection</span>
+                        </label>
+                        <p class="text-xs text-slate-500 ml-6 mt-1">Hides Origin IP. Filters traffic at edge.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Group 4: Traffic Analysis -->
+            <div>
+                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Traffic Analyzer</h4>
+                 <div id="analyzer-logs" class="text-xs font-mono text-slate-400 bg-slate-950/60 border border-slate-800 rounded p-2 h-40 overflow-y-auto space-y-1">
+                    <p class="text-slate-500">No traffic</p>
+                 </div>
+            </div>
+        </div>
+      </section>
+
     <div class="grid grid-cols-12 gap-4">
       <!-- Left Panel: Attacker Configuration -->
       <section id="panel-attacker" class="col-span-12 lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
@@ -184,102 +274,7 @@
           </div>
 
           <!-- User Logs -->
-          <div>
-            <h3 class="text-sm font-semibold mb-2">User Activity</h3>
-            <div id="user-logs" class="text-xs font-mono text-slate-400 bg-slate-950/60 border border-slate-800 rounded p-2 h-32 overflow-y-auto space-y-1"></div>
-          </div>
-        </div>
-
-        <!-- Firewall Dashboard (Collapsible) -->
-        <div class="border-t border-slate-800 pt-4">
-          <button id="btn-toggle-firewall" class="w-full flex items-center justify-between text-sm font-semibold mb-3 hover:text-emerald-400 transition">
-            <span>Firewall & Mitigation</span>
-            <span id="firewall-toggle-icon">▼</span>
-          </button>
-
-          <div id="firewall-dashboard" class="hidden space-y-4">
-            <!-- Protocol Filters -->
-            <div>
-              <h4 class="text-xs font-semibold text-slate-400 mb-2">Block Protocols</h4>
-              <div class="space-y-2">
-                <label class="flex items-center text-sm">
-                  <input type="checkbox" id="check-block-tcp" class="mr-2">
-                  <span>Block TCP</span>
-                  <span class="ml-auto text-xs text-amber-400">⚠ Blocks web traffic</span>
-                </label>
-                <label class="flex items-center text-sm">
-                  <input type="checkbox" id="check-block-udp" class="mr-2">
-                  <span>Block UDP</span>
-                </label>
-                <label class="flex items-center text-sm">
-                  <input type="checkbox" id="check-block-icmp" class="mr-2">
-                  <span>Block ICMP</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- IP Blacklist -->
-            <div>
-              <h4 class="text-xs font-semibold text-slate-400 mb-2">Detected Subnets</h4>
-              <div id="ip-blacklist" class="text-xs font-mono text-slate-400 max-h-32 overflow-y-auto space-y-1">
-                <p class="text-slate-500">No traffic detected</p>
-              </div>
-            </div>
-
-            <!-- Rate Limiting -->
-            <div>
-              <label class="flex items-center text-sm mb-2">
-                <input type="checkbox" id="check-rate-limit" class="mr-2">
-                <span>Rate Limiting</span>
-              </label>
-              <div id="rate-limit-controls" class="hidden space-y-2">
-                <label class="block text-xs text-slate-400">Threshold: <span id="rate-limit-value" class="text-emerald-400">20</span> req/sec</label>
-                <input type="range" id="slider-rate-limit" min="5" max="50" value="20" class="w-full">
-                <label class="block text-xs text-slate-400 mt-2">Apply To:</label>
-                <select id="dropdown-rate-limit-scope" class="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-100">
-                  <option value="ALL">All Protocols</option>
-                  <option value="TCP">TCP Only</option>
-                  <option value="UDP">UDP Only</option>
-                  <option value="ICMP">ICMP Only</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Load Balancing -->
-            <div>
-              <label class="flex items-center text-sm">
-                <input type="checkbox" id="check-load-balancing" class="mr-2">
-                <span>Load Balancing</span>
-              </label>
-            </div>
-
-            <!-- Reverse Proxy (v1.2) -->
-            <div>
-              <label class="flex items-center text-sm">
-                <input type="checkbox" id="check-reverse-proxy" class="mr-2">
-                <span>Reverse Proxy / DDoS Protection</span>
-              </label>
-            </div>
-
-            <!-- Reverse Proxy / DDoS Protection (v1.2) -->
-            <div>
-              <label class="flex items-center text-sm">
-                <input type="checkbox" id="check-reverse-proxy" class="mr-2">
-                <span>Reverse Proxy Protection</span>
-              </label>
-              <p class="text-xs text-slate-500 ml-6 mt-1">
-                Hides Origin IP. Filters traffic at edge.
-              </p>
-            </div>
-
-            <!-- Traffic Analyzer -->
-            <div>
-              <h4 class="text-xs font-semibold text-slate-400 mb-2">Traffic Analyzer</h4>
-              <div id="analyzer-logs" class="text-xs font-mono text-slate-400 bg-slate-950/60 border border-slate-800 rounded p-2 h-32 overflow-y-auto space-y-1">
-                <p class="text-slate-500">No traffic</p>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </section>
     </div>

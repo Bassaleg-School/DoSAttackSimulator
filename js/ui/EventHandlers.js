@@ -162,22 +162,6 @@ export default class EventHandlers {
   }
 
   attachFirewallControls() {
-    // Firewall dashboard toggle
-    if (this.elements.btnToggleFirewall) {
-      this.elements.btnToggleFirewall.addEventListener('click', () => {
-        const isHidden = this.elements.firewallDashboard.classList.contains('hidden');
-        if (isHidden) {
-          this.elements.firewallDashboard.classList.remove('hidden');
-          this.elements.firewallToggleIcon.textContent = '▲';
-          this.orchestrator.firewall.dashboardOpen = true;
-        } else {
-          this.elements.firewallDashboard.classList.add('hidden');
-          this.elements.firewallToggleIcon.textContent = '▼';
-          this.orchestrator.firewall.dashboardOpen = false;
-        }
-      });
-    }
-
     // Protocol blocking
     if (this.elements.checkBlockTcp) {
       this.elements.checkBlockTcp.addEventListener('change', (e) => {
@@ -251,18 +235,10 @@ export default class EventHandlers {
       this.elements.checkReverseProxy.addEventListener('change', (e) => {
         const enabled = e.target.checked;
         this.orchestrator.server.setReverseProxyEnabled(enabled);
-        this.uiManager.updateAddressing(enabled);
-      });
-    }
-
-    // Reverse Proxy (v1.2)
-    if (this.elements.checkReverseProxy) {
-      this.elements.checkReverseProxy.addEventListener('change', (e) => {
-        const enabled = e.target.checked;
-        this.orchestrator.server.setReverseProxyEnabled(enabled);
         if (this.orchestrator.firewall) {
            this.orchestrator.firewall.reverseProxyEnabled = enabled; 
         }
+        this.uiManager.updateAddressing(enabled);
         this.uiManager.updateServerIPs(this.orchestrator.server.publicIP, this.orchestrator.server.originIP);
       });
     }
