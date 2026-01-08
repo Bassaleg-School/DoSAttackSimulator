@@ -103,7 +103,6 @@ describe('Trajectory Computation', () => {
       
       // Velocity should point toward center (proxy Y position)
       const centerY = CONSTANTS.CANVAS_HEIGHT / 2;
-      const spawnY = CONSTANTS.CANVAS_HEIGHT / 2 - 60;
       if (packet.y < centerY) {
         expect(packet.vy).toBeGreaterThanOrEqual(0); // Moving down toward center
       } else if (packet.y > centerY) {
