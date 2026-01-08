@@ -129,6 +129,20 @@ export default class Orchestrator {
     this.particles = remaining;
   }
 
+  // Exposed for tests: process a single packet arrival through proxy + server path
+  processArrival(particle) {
+    // If proxy was never crossed (e.g., direct invocation), flag it to reuse proxy logic
+    if (this.server.reverseProxyEnabled && !particle.hasPassedProxy) {
+      particle.hasPassedProxy = true;
+    }
+
+    this.runInspection(particle);
+
+    if (!particle.blockedByFirewall && !particle.missedTarget && !particle.droppedByCollision) {
+      this.processServerArrival(particle);
+    }
+  }
+
   runInspection(particle) {
     // v1.2: Check if packet is targeting the correct IP
     // If reverse proxy is enabled, only packets to public IP reach the proxy

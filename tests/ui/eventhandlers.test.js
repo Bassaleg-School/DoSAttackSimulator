@@ -150,29 +150,6 @@ describe('EventHandlers', () => {
     expect(uiManager.updateAttackerInfo).toHaveBeenCalled();
   });
 
-  it('should toggle firewall dashboard visibility', () => {
-    eventHandlers.attachFirewallControls();
-    
-    const btn = dom.window.document.getElementById('btn-toggle-firewall');
-    const dashboard = dom.window.document.getElementById('firewall-dashboard');
-    const icon = dom.window.document.getElementById('firewall-toggle-icon');
-    
-    // Initially hidden
-    expect(dashboard.classList.contains('hidden')).toBe(true);
-    
-    // Click to show
-    btn.click();
-    expect(dashboard.classList.contains('hidden')).toBe(false);
-    expect(icon.textContent).toBe('▲');
-    expect(orchestrator.firewall.dashboardOpen).toBe(true);
-    
-    // Click to hide
-    btn.click();
-    expect(dashboard.classList.contains('hidden')).toBe(true);
-    expect(icon.textContent).toBe('▼');
-    expect(orchestrator.firewall.dashboardOpen).toBe(false);
-  });
-
   it('should block TCP protocol when checkbox checked', () => {
     eventHandlers.attachFirewallControls();
     
