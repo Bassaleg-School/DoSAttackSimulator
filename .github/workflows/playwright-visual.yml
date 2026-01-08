@@ -2,7 +2,7 @@ name: Playwright Visual Tests
 
 on:
   push:
-    branches: [ main, copilot/** ]
+    branches: [ main, copilot/**, wip/**, feature/** ]
   pull_request:
     branches: [ main ]
 
