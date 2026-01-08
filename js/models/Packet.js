@@ -4,8 +4,8 @@ export default class Packet {
   constructor({
     x = 0,
     y = 0,
-    vx = undefined, // velocity x component (computed from trajectory)
-    vy = undefined, // velocity y component (computed from trajectory)
+    vx = undefined, // velocity x component (set by Orchestrator during initialization)
+    vy = undefined, // velocity y component (set by Orchestrator during initialization)
     speed = 0,
     type = PACKET_TYPES.HTTP_GET,
     isMalicious,
