@@ -114,12 +114,12 @@ export default class Orchestrator {
     // Compute velocity vector
     const dx = destX - spawnX;
     const dy = destY - spawnY;
-    const distance_total = Math.sqrt(dx * dx + dy * dy);
+    const distanceTotal = Math.sqrt(dx * dx + dy * dy);
     
-    if (distance_total > 0) {
+    if (distanceTotal > 0) {
       const speed = packet.speed || CONSTANTS.SPEED_MALICIOUS;
-      packet.vx = (dx / distance_total) * speed;
-      packet.vy = (dy / distance_total) * speed;
+      packet.vx = (dx / distanceTotal) * speed;
+      packet.vy = (dy / distanceTotal) * speed;
     } else {
       packet.vx = packet.speed || CONSTANTS.SPEED_MALICIOUS;
       packet.vy = 0;
