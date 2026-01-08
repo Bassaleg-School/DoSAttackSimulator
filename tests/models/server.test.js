@@ -138,4 +138,33 @@ describe('Server', () => {
     expect(server.happinessScore).toBe(100);
     expect(server.droppedPackets).toBe(0);
   });
+
+  // v1.2 Tests: Reverse Proxy
+  it('initializes with origin IP and public IP', () => {
+    const server = new Server();
+    expect(server.originIP).toBe(CONSTANTS.VICTIM_ORIGIN_IP);
+    expect(server.publicIP).toBe(CONSTANTS.VICTIM_PUBLIC_IP);
+    expect(server.reverseProxyEnabled).toBe(false);
+  });
+
+  it('changes public IP when reverse proxy is enabled', () => {
+    const server = new Server();
+    expect(server.publicIP).toBe(CONSTANTS.VICTIM_ORIGIN_IP);
+    
+    server.setReverseProxyEnabled(true);
+    expect(server.publicIP).toBe(CONSTANTS.PROXY_PUBLIC_IP);
+    expect(server.originIP).toBe(CONSTANTS.VICTIM_ORIGIN_IP); // Origin IP unchanged
+    expect(server.reverseProxyEnabled).toBe(true);
+  });
+
+  it('restores public IP when reverse proxy is disabled', () => {
+    const server = new Server();
+    
+    server.setReverseProxyEnabled(true);
+    expect(server.publicIP).toBe(CONSTANTS.PROXY_PUBLIC_IP);
+    
+    server.setReverseProxyEnabled(false);
+    expect(server.publicIP).toBe(CONSTANTS.VICTIM_ORIGIN_IP);
+    expect(server.reverseProxyEnabled).toBe(false);
+  });
 });

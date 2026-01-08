@@ -8,6 +8,8 @@ export default class Packet {
     type = PACKET_TYPES.HTTP_GET,
     isMalicious,
     sourceIP = '0.0.0.0',
+    destinationIP = '0.0.0.0', // v1.2: target IP for this packet
+    clientIP = null, // v1.2: original source IP when traffic is proxied
     payloadSize = 0,
     trafficWeight = 1
   } = {}) {
@@ -18,6 +20,8 @@ export default class Packet {
     // Default malicious flag based on packet type when not provided explicitly
     this.isMalicious = typeof isMalicious === 'boolean' ? isMalicious : type !== PACKET_TYPES.HTTP_GET;
     this.sourceIP = sourceIP;
+    this.destinationIP = destinationIP; // v1.2
+    this.clientIP = clientIP; // v1.2
     this.payloadSize = payloadSize;
     this.trafficWeight = trafficWeight;
   }

@@ -54,4 +54,44 @@ describe('Firewall', () => {
     const subnets = fw.getDetectedSubnets();
     expect(subnets).toEqual(expect.arrayContaining(['10.1.1', '192.168.5']));
   });
+
+  // v1.2 Tests: Reverse Proxy
+  it('uses clientIP for rate limiting when available (reverse proxy enabled)', () => {
+    const fw = new Firewall({ rateLimitEnabled: true, dashboardOpen: true, rateLimitThreshold: 2, rateLimitScope: 'ALL' });
+    const baseTime = 1000;
+    // When reverse proxy is enabled, all packets come from proxy egress but have clientIP
+    const pkt1 = { type: PACKET_TYPES.HTTP_GET, sourceIP: '198.51.100.5', clientIP: '45.33.12.7' };
+    const pkt2 = { type: PACKET_TYPES.HTTP_GET, sourceIP: '198.51.100.5', clientIP: '99.1.2.3' };
+    
+    // Two different client IPs should have separate rate limits
+    expect(fw.inspect(pkt1, baseTime).allowed).toBe(true); // client1: 1
+    expect(fw.inspect(pkt1, baseTime + 0.1).allowed).toBe(true); // client1: 2
+    expect(fw.inspect(pkt2, baseTime + 0.2).allowed).toBe(true); // client2: 1 (different client)
+    expect(fw.inspect(pkt1, baseTime + 0.3).allowed).toBe(false); // client1: 3 (blocked)
+    expect(fw.inspect(pkt2, baseTime + 0.4).allowed).toBe(true); // client2: 2 (still ok)
+  });
+
+  it('uses clientIP for IP blocking when available (reverse proxy enabled)', () => {
+    const fw = new Firewall();
+    fw.blockedIPs.add('45.33.12'); // Block a client subnet
+    
+    // Packet from proxy with clientIP in blocked range
+    const pkt = { type: PACKET_TYPES.UDP, sourceIP: '198.51.100.5', clientIP: '45.33.12.7' };
+    expect(fw.inspect(pkt).allowed).toBe(false);
+    
+    // Packet from proxy with clientIP NOT in blocked range
+    const pkt2 = { type: PACKET_TYPES.UDP, sourceIP: '198.51.100.5', clientIP: '99.1.2.3' };
+    expect(fw.inspect(pkt2).allowed).toBe(true);
+  });
+
+  it('falls back to sourceIP when clientIP not present', () => {
+    const fw = new Firewall({ rateLimitEnabled: true, dashboardOpen: true, rateLimitThreshold: 2, rateLimitScope: 'ALL' });
+    const baseTime = 1000;
+    // Packet without clientIP (reverse proxy not enabled or client IP not preserved)
+    const pkt = { type: PACKET_TYPES.UDP, sourceIP: '10.0.0.1' };
+    
+    expect(fw.inspect(pkt, baseTime).allowed).toBe(true); // 1
+    expect(fw.inspect(pkt, baseTime + 0.1).allowed).toBe(true); // 2
+    expect(fw.inspect(pkt, baseTime + 0.2).allowed).toBe(false); // 3 (blocked)
+  });
 });

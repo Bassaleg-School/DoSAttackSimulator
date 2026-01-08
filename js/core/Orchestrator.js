@@ -19,7 +19,7 @@ export default class Orchestrator {
   reset() {
     this.genuineTraffic = new GenuineTraffic();
     this.attacker = new Attacker();
-    this.server = new Server();
+    this.server.reset(); // v1.1: Use reset method
     this.firewall = new Firewall();
     this.particles = [];
     this.analyzerLogs = [];
@@ -39,12 +39,16 @@ export default class Orchestrator {
     // Spawn genuine traffic if simulation is running
     if (this.isSimulationRunning) {
       const genuinePackets = this.genuineTraffic.spawnPackets(dt);
+      // v1.2: Set destination IP to server's public IP
+      genuinePackets.forEach(p => p.destinationIP = this.server.publicIP);
       this.addParticles(genuinePackets);
     }
 
     // Spawn attack traffic if attacking
     if (this.attacker.isAttacking) {
       const { packets: attackPackets } = this.attacker.spawnPackets(dt);
+      // v1.2: Set destination IP to attacker's target IP
+      attackPackets.forEach(p => p.destinationIP = this.attacker.targetIP);
       this.addParticles(attackPackets);
     }
 
@@ -104,6 +108,40 @@ export default class Orchestrator {
   }
 
   processArrival(particle) {
+    // v1.2: Check if packet is targeting the correct IP
+    // If reverse proxy is enabled and origin shielding is active, only packets to public IP or from proxy reach server
+    if (this.server.reverseProxyEnabled) {
+      // If packet destination doesn't match public IP, it doesn't reach the proxy
+      if (particle.destinationIP !== this.server.publicIP) {
+        // Packet missed - targeting wrong IP
+        this.logAnalyzerEvent({
+          ip: particle.sourceIP,
+          type: particle.type,
+          action: 'MISSED',
+          reason: 'WRONG_IP'
+        });
+        return;
+      }
+      
+      // Packet reached proxy - mark as forwarded and preserve clientIP
+      if (!particle.clientIP) {
+        particle.clientIP = particle.sourceIP;
+      }
+      // Change sourceIP to proxy egress IP
+      const proxyEgressHost = Math.floor(Math.random() * 256);
+      particle.sourceIP = `${CONSTANTS.PROXY_EGRESS_IP_PREFIX}.${proxyEgressHost}`;
+      particle.isForwarded = true; // Mark for visualization
+    } else if (particle.destinationIP !== this.server.publicIP) {
+      // No proxy, packet must match public IP
+      this.logAnalyzerEvent({
+        ip: particle.sourceIP,
+        type: particle.type,
+        action: 'MISSED',
+        reason: 'WRONG_IP'
+      });
+      return;
+    }
+    
     // Firewall inspection
     const firewallResult = this.firewall.inspect(particle);
     
@@ -111,7 +149,7 @@ export default class Orchestrator {
       // Firewall blocked packet
       particle.blockedByFirewall = true;
       this.logAnalyzerEvent({
-        ip: particle.sourceIP,
+        ip: particle.clientIP || particle.sourceIP,
         type: particle.type,
         action: 'BLOCKED',
         reason: firewallResult.reason
@@ -131,14 +169,14 @@ export default class Orchestrator {
       
       if (serverResult.allowed) {
         this.logAnalyzerEvent({
-          ip: particle.sourceIP,
+          ip: particle.clientIP || particle.sourceIP,
           type: particle.type,
           action: 'ALLOWED',
           reason: serverResult.reason
         });
       } else {
         this.logAnalyzerEvent({
-          ip: particle.sourceIP,
+          ip: particle.clientIP || particle.sourceIP,
           type: particle.type,
           action: 'DROPPED',
           reason: serverResult.reason
@@ -151,7 +189,7 @@ export default class Orchestrator {
         this.server.updateHappiness();
       }
       this.logAnalyzerEvent({
-        ip: particle.sourceIP,
+        ip: particle.clientIP || particle.sourceIP,
         type: particle.type,
         action: 'DROPPED',
         reason: 'SERVER_CRASHED'

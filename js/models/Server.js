@@ -14,6 +14,11 @@ export default class Server {
     this.droppedPacketEvents = []; // v1.1: time-windowed tracking for happiness recovery
     this.status = SERVER_STATUS.ONLINE;
     this.bandwidthCapacityMultiplier = 1; // 1.0 = baseline, higher = more capacity
+    
+    // v1.2: Reverse Proxy / IP addressing
+    this.originIP = CONSTANTS.VICTIM_ORIGIN_IP;
+    this.publicIP = CONSTANTS.VICTIM_PUBLIC_IP;
+    this.reverseProxyEnabled = CONSTANTS.REVERSE_PROXY_ENABLED;
   }
 
   getCurrentLoad() {
@@ -123,5 +128,19 @@ export default class Server {
     this.droppedPacketEvents = [];
     this.status = SERVER_STATUS.ONLINE;
     this.bandwidthCapacityMultiplier = 1;
+    // v1.2: Reset proxy state
+    this.originIP = CONSTANTS.VICTIM_ORIGIN_IP;
+    this.publicIP = CONSTANTS.VICTIM_PUBLIC_IP;
+    this.reverseProxyEnabled = CONSTANTS.REVERSE_PROXY_ENABLED;
+  }
+  
+  // v1.2: Toggle reverse proxy
+  setReverseProxyEnabled(enabled) {
+    this.reverseProxyEnabled = enabled;
+    if (enabled) {
+      this.publicIP = CONSTANTS.PROXY_PUBLIC_IP;
+    } else {
+      this.publicIP = CONSTANTS.VICTIM_ORIGIN_IP;
+    }
   }
 }

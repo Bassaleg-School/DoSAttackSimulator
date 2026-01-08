@@ -50,7 +50,13 @@ export default class Firewall {
 
   inspect(packet, nowSeconds = Date.now() / 1000) {
     const protocol = mapTypeToProtocol(packet.type);
-    const subnet = extractSubnet(packet.sourceIP);
+    
+    // v1.2: Use clientIP for IP-based controls when available (reverse proxy scenario)
+    // Otherwise fall back to sourceIP
+    const effectiveIP = packet.clientIP || packet.sourceIP;
+    const subnet = extractSubnet(effectiveIP);
+    
+    // Track subnet from the effective IP (client if available, otherwise source)
     this.detectedSubnets.add(subnet);
 
     if (protocol && this.blockedProtocols.has(protocol)) {
@@ -62,7 +68,7 @@ export default class Firewall {
     }
 
     if (this.isRateLimitActive() && protocol && this.protocolMatchesScope(protocol)) {
-      const key = this.getCounterKey(packet.sourceIP, protocol);
+      const key = this.getCounterKey(effectiveIP, protocol);
       const counter = this.perIpCounters.get(key) || { count: 0, windowStart: nowSeconds };
       this.resetWindowIfNeeded(counter, nowSeconds);
       counter.count += 1;
