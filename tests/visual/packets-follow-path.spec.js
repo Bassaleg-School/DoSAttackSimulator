@@ -329,7 +329,7 @@ test.describe('Canvas Rendering - Packet Trajectory', () => {
 
     // Verify debug overlay elements are present
     const canvasHandle = await page.locator('canvas').first().elementHandle();
-    const hasDebugElements = await page.evaluate((canvas) => {
+    await page.evaluate((canvas) => {
       const ctx = canvas.getContext('2d');
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
       
