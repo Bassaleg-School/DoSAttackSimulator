@@ -64,10 +64,65 @@ export default class Orchestrator {
       if (this.particles.length >= CONSTANTS.MAX_ACTIVE_PARTICLES) {
         break;
       }
-      // Initialize particle position at left edge of canvas
-      packet.x = 0;
-      packet.y = CONSTANTS.CANVAS_HEIGHT / 2;
+      // Initialize particle position based on cluster
+      this.initializeParticlePosition(packet);
       this.particles.push(packet);
+    }
+  }
+
+  initializeParticlePosition(packet) {
+    const centerY = CONSTANTS.CANVAS_HEIGHT / 2;
+    const leftX = 80;
+    const rightX = CONSTANTS.CANVAS_WIDTH - 80;
+    
+    // Determine spawn cluster based on packet type
+    let spawnX, spawnY, destX, destY;
+    
+    if (packet.isMalicious) {
+      // Attacker cluster (top-left)
+      spawnX = leftX;
+      spawnY = centerY - 60;
+    } else {
+      // Legitimate user cluster (bottom-left)
+      spawnX = leftX;
+      spawnY = centerY + 60;
+    }
+    
+    // Add cluster scatter for multi-device visualization
+    const clusterRadius = 15;
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * clusterRadius;
+    spawnX += Math.cos(angle) * distance;
+    spawnY += Math.sin(angle) * distance;
+    
+    // Determine destination
+    if (this.server.reverseProxyEnabled) {
+      // Destination is proxy node when proxy enabled
+      const pipeStartX = (CONSTANTS.CANVAS_WIDTH - CONSTANTS.PIPE_WIDTH) / 2;
+      destX = pipeStartX + (CONSTANTS.PIPE_WIDTH * 0.85);
+      destY = centerY;
+    } else {
+      // Destination is server (right side)
+      destX = rightX;
+      destY = centerY;
+    }
+    
+    // Set position
+    packet.x = spawnX;
+    packet.y = spawnY;
+    
+    // Compute velocity vector
+    const dx = destX - spawnX;
+    const dy = destY - spawnY;
+    const distance_total = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance_total > 0) {
+      const speed = packet.speed || CONSTANTS.SPEED_MALICIOUS;
+      packet.vx = (dx / distance_total) * speed;
+      packet.vy = (dy / distance_total) * speed;
+    } else {
+      packet.vx = packet.speed || CONSTANTS.SPEED_MALICIOUS;
+      packet.vy = 0;
     }
   }
 
@@ -76,15 +131,36 @@ export default class Orchestrator {
     const pipeEndX = CONSTANTS.CANVAS_WIDTH;
     const pipeStartX = (CONSTANTS.CANVAS_WIDTH - CONSTANTS.PIPE_WIDTH) / 2;
     const proxyX = pipeStartX + (CONSTANTS.PIPE_WIDTH * 0.85);
+    const rightX = CONSTANTS.CANVAS_WIDTH - 80;
 
     for (const particle of this.particles) {
-      particle.x += particle.speed * dt;
+      // Use velocity vector if available, otherwise fall back to horizontal movement
+      if (particle.vx !== undefined && particle.vy !== undefined) {
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        
+        // Update destination after passing proxy
+        if (this.server.reverseProxyEnabled && particle.hasPassedProxy && !particle.destinationUpdated) {
+          particle.destinationUpdated = true;
+          const centerY = CONSTANTS.CANVAS_HEIGHT / 2;
+          const dx = rightX - particle.x;
+          const dy = centerY - particle.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance > 0) {
+            const speed = particle.speed || CONSTANTS.SPEED_MALICIOUS;
+            particle.vx = (dx / distance) * speed;
+            particle.vy = (dy / distance) * speed;
+          }
+        }
+      } else {
+        particle.x += particle.speed * dt;
+      }
 
       if (this.processProxyCheckpoint(particle, proxyX)) {
         continue;
       }
 
-      if (this.processServerEdge(particle, pipeEndX)) {
+      if (this.processServerEdge(particle, rightX)) {
         continue;
       }
 

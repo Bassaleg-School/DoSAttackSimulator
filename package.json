@@ -6,12 +6,25 @@
   "scripts": {
     "dev:css": "tailwindcss -i ./src/input.css -o ./css/main.css --watch",
     "build:css": "tailwindcss -i ./src/input.css -o ./css/main.css --minify",
-    "test": "vitest"
+    "test": "vitest",
+    "test:visual": "playwright test",
+    "test:visual:headed": "playwright test --headed",
+    "test:visual:debug": "playwright test --debug",
+    "test:visual:update": "playwright test --update-snapshots",
+    "serve": "http-server . -p 8080 -c-1"
   },
-  "keywords": ["dos", "ddos", "simulator", "education"],
+  "keywords": [
+    "dos",
+    "ddos",
+    "simulator",
+    "education"
+  ],
   "license": "MIT",
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "http-server": "^14.1.1",
     "jsdom": "^24.0.0",
+    "playwright": "^1.57.0",
     "tailwindcss": "^3.4.10",
     "vitest": "^1.6.0"
   }
