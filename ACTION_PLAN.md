@@ -69,12 +69,13 @@ Tests:
 Deliverables:
 - State: blockedProtocols, blockedIPs (/24 strings), rate limiting (threshold, per-IP counters, reset per second, protocol scope), loadBalancingEnabled flag, detected subnets tracking.
 - `inspect(packet)` returns {allowed, reason}; applies protocol block, /24 blacklist, rate limit when enabled, respects protocol scope or ALL.
+- Rate limiting only active when firewall dashboard is open/enabled (matches spec gating).
 - `getDetectedSubnets()` aggregates seen /24s.
 Tests:
 - Blocking TCP rejects HTTP_GET and TCP_SYN.
 - Blocking UDP/ICMP works individually.
 - /24 blacklist blocks matching IP, allows others.
-- Rate limit: counters reset each second; over-threshold blocks; protocol-scoped behavior verified.
+- Rate limit: counters reset each second; over-threshold blocks; protocol-scoped behavior verified; inactive when dashboard closed.
 - Detected subnets list grows with traffic.
 
 ### 7) Simulation Orchestration & Game Loop
@@ -82,21 +83,25 @@ Deliverables:
 - `core/GameLoop` with RAF-based tick, delta time.
 - Main orchestrator tying packet spawning, firewall inspection, server receive, particle cap (`MAX_ACTIVE_PARTICLES`), crash short-circuit.
 - Bandwidth collision drop rule when bandwidth >95% for legit packets.
+- Traffic Analyzer log budget honored: prioritize blocked/dropped entries, sample allowed within `UI_ANALYZER_LOG_MAX_PER_SECOND`.
 Tests:
 - Loop calls update with computed dt (mock RAF).
 - Spawn respects visual cap; particles list never exceeds max.
 - Packets blocked by firewall never hit server.
 - Crash stops processing; recovery resumes.
 - Legit packet dropped when bandwidth over threshold increments dropped/happiness penalty.
+- Analyzer logs capped per-second and prefer blocked/dropped events.
 
 ### 8) Canvas Renderer
 Deliverables:
 - Draw pipe(s), particles shapes/colors per type, legend; grey on firewall block, black on timeout; lock icons for half-open; pipe color based on load; dual pipes when load balancing.
+- Respect canvas sizing from constants (`CANVAS_WIDTH`, `CANVAS_HEIGHT`, pipe dimensions) to match spec visuals.
 Tests (logic/mocked canvas):
 - Type→shape/color mapping table intact.
 - Pipe color interpolation matches load values.
 - Dual pipe rendering flag when loadBalancing enabled.
 - Legend data includes all packet types + lock.
+- Canvas uses configured dimensions and pipe sizing.
 
 ### 9) UI Structure & Styling
 Deliverables:
@@ -111,10 +116,11 @@ Tests (DOM with jsdom):
 ### 10) Event Handling & Controls
 Deliverables:
 - `EventHandlers` wiring: sliders for deviceCount/attack bandwidth/server bandwidth, dropdown for attack type, start/stop/reset/attack buttons, firewall protocol toggles, IP block toggles, rate limit toggle/slider, load balancing toggle, firewall collapse control.
+- Start Attack generates botnet ranges (1 per 20 devices) and keeps them fixed until the next Start Attack; Stop Attack halts new malicious spawns but lets in-flight packets proceed.
 - Reset clears state, particles, logs, regenerates botnet ranges on next attack start.
 Tests:
 - UI control changes propagate to models (spy/state assertions).
-- Start/stop flip simulation/attack flags appropriately.
+- Start/stop flip simulation/attack flags appropriately and refresh botnet ranges on attack start.
 - Reset restores defaults and empties logs/particles.
 - Firewall collapse toggles DOM class/state.
 
