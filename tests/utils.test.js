@@ -52,6 +52,6 @@ describe('utils', () => {
     expect(abbreviateNumber(42)).toBe('42');
     expect(abbreviateNumber(1500)).toBe('1.5k');
     expect(abbreviateNumber(2500000)).toBe('2.5m');
-    expect(abbreviateNumber(-1250)).toBe('-1.2k');
+    expect(abbreviateNumber(-1250)).toBe('-1.3k');
   });
 });

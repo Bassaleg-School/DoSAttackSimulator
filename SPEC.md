@@ -1,7 +1,7 @@
 # **Functional Specification: Interactive DoS/DDoS Attack Simulator**
 
 ---
-Spec-Version: 1.3.1
+Spec-Version: 1.4.0
 Last-Updated: 2026-01-08
 Changelog: CHANGELOG.md
 Summary: Adds packet visual scaling, network node badges (attackers/legit/proxy/origin), and aligns metrics with aggregate badge counts

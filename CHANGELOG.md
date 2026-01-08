@@ -2,7 +2,7 @@
 
 All notable changes to the specification are documented in this file.
 
-## [1.3.1] - 2026-01-08
+## [1.4.0] - 2026-01-08
 - Implement packet visual scaling defaults (×100) across malicious and genuine traffic, align happiness/drop accounting to weighted aggregates, and add a proxy badge IP/count toggle with analyzer log scale suffixes to keep badges, logs, and metrics consistent.
 
 ## [1.3.0] - 2026-01-08
