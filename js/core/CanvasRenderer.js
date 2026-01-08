@@ -26,7 +26,7 @@ export default class CanvasRenderer {
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  drawPipes(load, loadBalancingEnabled) {
+  drawPipes(load, loadBalancingEnabled, reverseProxyEnabled) {
     const pipeX = (this.canvas.width - CONSTANTS.PIPE_WIDTH) / 2;
     const centerY = this.canvas.height / 2;
     const color = this.getPipeColor(load);
@@ -55,6 +55,37 @@ export default class CanvasRenderer {
       this.ctx.fillRect(pipeX, pipeY, CONSTANTS.PIPE_WIDTH, CONSTANTS.PIPE_HEIGHT);
       this.ctx.strokeRect(pipeX, pipeY, CONSTANTS.PIPE_WIDTH, CONSTANTS.PIPE_HEIGHT);
     }
+
+    // v1.2: Draw Reverse Proxy Node
+    if (reverseProxyEnabled) {
+      const proxyX = pipeX + (CONSTANTS.PIPE_WIDTH * 0.85); // 85% down the pipe
+      
+      // Draw connection line to split "Public" and "Origin" segments visually
+      this.ctx.strokeStyle = '#475569'; // slate-600
+      this.ctx.lineWidth = 4;
+      this.ctx.beginPath();
+      this.ctx.moveTo(proxyX, centerY - CONSTANTS.PIPE_HEIGHT / 2);
+      this.ctx.lineTo(proxyX, centerY + CONSTANTS.PIPE_HEIGHT / 2);
+      this.ctx.stroke();
+
+      // Draw Proxy Node
+      this.ctx.fillStyle = '#0f172a'; // slate-950 (background)
+      this.ctx.beginPath();
+      this.ctx.arc(proxyX, centerY, 24, 0, Math.PI * 2);
+      this.ctx.fill();
+      
+      this.ctx.strokeStyle = '#38bdf8'; // sky-400
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.arc(proxyX, centerY, 24, 0, Math.PI * 2);
+      this.ctx.stroke();
+      
+      this.ctx.fillStyle = '#38bdf8'; // sky-400
+      this.ctx.font = 'bold 10px monospace';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText('PROXY', proxyX, centerY);
+    }
   }
 
   drawParticle(particle) {
@@ -66,6 +97,9 @@ export default class CanvasRenderer {
       color = CONSTANTS.COLOR_BLOCKED;
     } else if (particle.droppedByCollision) {
       color = CONSTANTS.COLOR_TIMEOUT;
+    } else if (particle.isForwarded) {
+      // v1.2: Recolor forwarded packets
+      color = CONSTANTS.COLOR_FORWARDED;
     } else {
       switch (particle.type) {
         case PACKET_TYPES.HTTP_GET:
@@ -138,7 +172,7 @@ export default class CanvasRenderer {
     this.clear();
     
     const load = Math.max(state.server.bandwidthUsage, state.server.cpuLoad);
-    this.drawPipes(load, state.firewall.loadBalancingEnabled);
+    this.drawPipes(load, state.firewall.loadBalancingEnabled, state.server.reverseProxyEnabled);
     
     // Draw particles
     for (const particle of state.particles) {

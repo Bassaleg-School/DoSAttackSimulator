@@ -5,12 +5,19 @@ export default class UIManager {
     this.elements = {
       // Server stats
       serverStatus: document.getElementById('server-status'),
+      serverOriginIP: document.getElementById('server-origin-ip'),
+      serverPublicIPRow: document.getElementById('server-public-ip-row'),
+      serverPublicIP: document.getElementById('server-public-ip'),
       bandwidthValue: document.getElementById('bandwidth-value'),
       bandwidthBar: document.getElementById('bandwidth-bar'),
       cpuValue: document.getElementById('cpu-value'),
       cpuBar: document.getElementById('cpu-bar'),
       happinessValue: document.getElementById('happiness-value'),
       happinessBar: document.getElementById('happiness-bar'),
+      
+      // Server IP Info (v1.2)
+      displayPublicIP: document.getElementById('display-public-ip'),
+      displayOriginIP: document.getElementById('display-origin-ip'),
       
       // Logs
       userLogs: document.getElementById('user-logs'),
@@ -56,6 +63,28 @@ export default class UIManager {
       case SERVER_STATUS.CRASHED:
         badge.classList.add('bg-red-900', 'text-red-300');
         break;
+    }
+  }
+
+  updateServerIPs(publicIP, originIP) {
+    if (this.elements.displayPublicIP) {
+      this.elements.displayPublicIP.textContent = publicIP;
+      this.elements.displayPublicIP.className = publicIP === CONSTANTS.PROXY_PUBLIC_IP 
+        ? 'text-cyan-400 font-mono' // Highlight proxy IP
+        : 'text-emerald-400 font-mono';
+    }
+    if (this.elements.displayOriginIP) {
+      this.elements.displayOriginIP.textContent = originIP;
+    }
+  }
+
+  updateAddressing(isProxyEnabled) {
+    if (!this.elements.serverPublicIPRow) return;
+    
+    if (isProxyEnabled) {
+      this.elements.serverPublicIPRow.classList.remove('hidden');
+    } else {
+      this.elements.serverPublicIPRow.classList.add('hidden');
     }
   }
 

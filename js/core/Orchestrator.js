@@ -71,17 +71,42 @@ export default class Orchestrator {
   updateParticles(dt) {
     const remaining = [];
     const pipeEndX = CONSTANTS.CANVAS_WIDTH;
+    const pipeStartX = (CONSTANTS.CANVAS_WIDTH - CONSTANTS.PIPE_WIDTH) / 2;
+    const proxyX = pipeStartX + (CONSTANTS.PIPE_WIDTH * 0.85);
 
     for (const particle of this.particles) {
       // Move particle
       particle.x += particle.speed * dt;
+      
+      let shouldRemove = false;
+
+      // v1.2: Proxy Inspection Point
+      if (this.server.reverseProxyEnabled && !particle.hasPassedProxy && particle.x >= proxyX) {
+        particle.hasPassedProxy = true;
+        this.runInspection(particle);
+        
+        if (particle.blockedByFirewall || particle.missedTarget) {
+          // Remove immediately (visual effect: disappear at proxy node)
+          shouldRemove = true;
+        }
+      }
 
       // Check if particle has reached the server
-      if (particle.x >= pipeEndX) {
-        this.processArrival(particle);
-      } else {
-        // Collision drop rule: if bandwidth > 95% and packet is legitimate, drop it
-        if (!particle.isMalicious && this.server.bandwidthUsage > CONSTANTS.BANDWIDTH_COLLISION_THRESHOLD) {
+      if (!shouldRemove && particle.x >= pipeEndX) {
+        // If not using proxy, inspect at server edge
+        if (!this.server.reverseProxyEnabled) {
+          this.runInspection(particle);
+        }
+
+        if (!particle.blockedByFirewall && !particle.missedTarget && !particle.droppedByCollision) {
+          this.processServerArrival(particle);
+        }
+        shouldRemove = true;
+      } 
+      
+      // Collision drop rule
+      if (!shouldRemove) {
+        if (!particle.isMalicious && !particle.blockedByFirewall && !particle.missedTarget && this.server.bandwidthUsage > CONSTANTS.BANDWIDTH_COLLISION_THRESHOLD) {
           // Mark as dropped due to timeout (collision/congestion)
           particle.droppedByCollision = true;
           this.server.recordDroppedPacket();
@@ -95,7 +120,6 @@ export default class Orchestrator {
           remaining.push(particle);
         } else if (particle.droppedByCollision) {
           // Particle was marked as dropped in previous frame, now remove it
-          // (don't add to remaining)
         } else {
           remaining.push(particle);
         }
@@ -105,13 +129,13 @@ export default class Orchestrator {
     this.particles = remaining;
   }
 
-  processArrival(particle) {
+  runInspection(particle) {
     // v1.2: Check if packet is targeting the correct IP
     // If reverse proxy is enabled, only packets to public IP reach the proxy
     if (this.server.reverseProxyEnabled) {
       // If packet destination doesn't match public IP, it doesn't reach the proxy
       if (particle.destinationIP !== this.server.publicIP) {
-        // Packet missed - targeting wrong IP
+        particle.missedTarget = true;
         this.logAnalyzerEvent({
           ip: particle.sourceIP,
           type: particle.type,
@@ -131,6 +155,7 @@ export default class Orchestrator {
       particle.isForwarded = true; // Mark for visualization
     } else if (particle.destinationIP !== this.server.publicIP) {
       // No proxy, packet must match public IP
+      particle.missedTarget = true;
       this.logAnalyzerEvent({
         ip: particle.sourceIP,
         type: particle.type,
@@ -159,7 +184,9 @@ export default class Orchestrator {
       }
       return;
     }
+  }
 
+  processServerArrival(particle) {
     // Server processing (if not crashed)
     if (this.server.status !== 'CRASHED') {
       const serverResult = this.server.receive(particle);

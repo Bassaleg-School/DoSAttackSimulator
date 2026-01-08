@@ -30,11 +30,13 @@ export default class EventHandlers {
       checkBlockTcp: document.getElementById('check-block-tcp'),
       checkBlockUdp: document.getElementById('check-block-udp'),
       checkBlockIcmp: document.getElementById('check-block-icmp'),
+      checkReverseProxy: document.getElementById('check-reverse-proxy'),
       checkRateLimit: document.getElementById('check-rate-limit'),
       sliderRateLimit: document.getElementById('slider-rate-limit'),
       rateLimitControls: document.getElementById('rate-limit-controls'),
       dropdownRateLimitScope: document.getElementById('dropdown-rate-limit-scope'),
-      checkLoadBalancing: document.getElementById('check-load-balancing')
+      checkLoadBalancing: document.getElementById('check-load-balancing'),
+      checkReverseProxy: document.getElementById('check-reverse-proxy')
     };
   }
 
@@ -241,6 +243,27 @@ export default class EventHandlers {
     if (this.elements.checkLoadBalancing) {
       this.elements.checkLoadBalancing.addEventListener('change', (e) => {
         this.orchestrator.firewall.loadBalancingEnabled = e.target.checked;
+      });
+    }
+
+    // Reverse Proxy (v1.2)
+    if (this.elements.checkReverseProxy) {
+      this.elements.checkReverseProxy.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        this.orchestrator.server.setReverseProxyEnabled(enabled);
+        this.uiManager.updateAddressing(enabled);
+      });
+    }
+
+    // Reverse Proxy (v1.2)
+    if (this.elements.checkReverseProxy) {
+      this.elements.checkReverseProxy.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        this.orchestrator.server.setReverseProxyEnabled(enabled);
+        if (this.orchestrator.firewall) {
+           this.orchestrator.firewall.reverseProxyEnabled = enabled; 
+        }
+        this.uiManager.updateServerIPs(this.orchestrator.server.publicIP, this.orchestrator.server.originIP);
       });
     }
   }
