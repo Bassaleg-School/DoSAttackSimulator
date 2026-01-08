@@ -194,6 +194,13 @@
               <div id="rate-limit-controls" class="hidden space-y-2">
                 <label class="block text-xs text-slate-400">Threshold: <span id="rate-limit-value" class="text-emerald-400">20</span> req/sec</label>
                 <input type="range" id="slider-rate-limit" min="5" max="50" value="20" class="w-full">
+                <label class="block text-xs text-slate-400 mt-2">Apply To:</label>
+                <select id="dropdown-rate-limit-scope" class="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-100">
+                  <option value="ALL">All Protocols</option>
+                  <option value="TCP">TCP Only</option>
+                  <option value="UDP">UDP Only</option>
+                  <option value="ICMP">ICMP Only</option>
+                </select>
               </div>
             </div>
 

@@ -29,6 +29,7 @@ export default class EventHandlers {
       checkRateLimit: document.getElementById('check-rate-limit'),
       sliderRateLimit: document.getElementById('slider-rate-limit'),
       rateLimitControls: document.getElementById('rate-limit-controls'),
+      dropdownRateLimitScope: document.getElementById('dropdown-rate-limit-scope'),
       checkLoadBalancing: document.getElementById('check-load-balancing')
     };
   }
@@ -195,6 +196,12 @@ export default class EventHandlers {
         if (this.uiManager.elements.rateLimitValue) {
           this.uiManager.elements.rateLimitValue.textContent = value;
         }
+      });
+    }
+
+    if (this.elements.dropdownRateLimitScope) {
+      this.elements.dropdownRateLimitScope.addEventListener('change', (e) => {
+        this.orchestrator.firewall.rateLimitScope = e.target.value;
       });
     }
 
