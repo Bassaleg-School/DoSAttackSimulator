@@ -77,7 +77,7 @@ describe('Server', () => {
     expect(server.happinessScore).toBeGreaterThanOrEqual(90);
   });
 
-  it('happiness does not recover while genuine users are still being blocked by firewall rules', () => {
+  it('happiness does not recover while packets continue to be dropped', () => {
     const server = new Server();
     
     // Drop some packets
@@ -92,8 +92,8 @@ describe('Server', () => {
     server.bandwidthUsage = 0;
     server.update(0);
     
-    // But continue to drop packets (e.g., firewall blocking) using the new system
-    server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
+    // But continue to drop packets (e.g., from ongoing issues)
+    server.recordDroppedPacket();
     server.update(1);
     
     // Happiness should not improve if packets are still being dropped
