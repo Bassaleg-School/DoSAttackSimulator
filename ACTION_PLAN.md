@@ -9,17 +9,16 @@
 ## Milestones
 Each milestone is a commit boundary with green tests.
 
-### 1) Tooling & Skeleton
+### 1) Tooling & Skeleton ✅
 Deliverables:
 - `package.json` with scripts: `dev:css`, `build:css`, `test` (vitest), `lint` (optional).
 - `tailwind.config.js` scanning `index.html`, `js/**`.
 - `src/input.css` with Tailwind directives; generated `css/main.css` (committed).
-- `index.html` scaffold: top control bar + three columns (empty placeholders ok).
-- Vitest config (if needed) and sample passing test.
-Tests (Vitest):
-- Package scripts exist and run without error (smoke via spawn or import package.json).
-- Tailwind config includes content paths and theme is dark mode friendly (config snapshot).
-- Sample test passes (proves Vitest wiring).
+- `index.html` scaffold: top control bar + three columns (placeholders present).
+- Vitest config and sample passing test.
+Status:
+- Implemented Tailwind/Vitest tooling, initial layout scaffold, and generated `css/main.css`.
+- `npm test` passing (sample assertion), `npm run build:css` generates CSS.
 
 ### 2) Constants & Utilities
 Deliverables:
