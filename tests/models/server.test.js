@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import Server from '../../js/models/Server.js';
+import Server, { DROPPED_PACKET_TTL_SECONDS } from '../../js/models/Server.js';
 import { PACKET_TYPES, SERVER_STATUS, CONSTANTS } from '../../js/constants.js';
 
 describe('Server', () => {
@@ -92,8 +92,8 @@ describe('Server', () => {
     server.bandwidthUsage = 0;
     server.update(0);
     
-    // But continue to drop packets (e.g., firewall blocking)
-    server.droppedPackets += 1;
+    // But continue to drop packets (e.g., firewall blocking) using the new system
+    server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
     server.update(1);
     
     // Happiness should not improve if packets are still being dropped
@@ -149,7 +149,7 @@ describe('Server', () => {
 
   it('changes public IP when reverse proxy is enabled', () => {
     const server = new Server();
-    expect(server.publicIP).toBe(CONSTANTS.VICTIM_ORIGIN_IP);
+    expect(server.publicIP).toBe(CONSTANTS.VICTIM_PUBLIC_IP);
     
     server.setReverseProxyEnabled(true);
     expect(server.publicIP).toBe(CONSTANTS.PROXY_PUBLIC_IP);
@@ -164,7 +164,7 @@ describe('Server', () => {
     expect(server.publicIP).toBe(CONSTANTS.PROXY_PUBLIC_IP);
     
     server.setReverseProxyEnabled(false);
-    expect(server.publicIP).toBe(CONSTANTS.VICTIM_ORIGIN_IP);
+    expect(server.publicIP).toBe(CONSTANTS.VICTIM_PUBLIC_IP);
     expect(server.reverseProxyEnabled).toBe(false);
   });
 });
