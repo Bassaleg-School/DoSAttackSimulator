@@ -23,6 +23,7 @@ export default class UIManager {
       // Attacker info
       deviceCountValue: document.getElementById('device-count-value'),
       attackBandwidthValue: document.getElementById('attack-bandwidth-value'),
+      attackerIcon: document.getElementById('attacker-icon'),
       botnetRanges: document.getElementById('botnet-ranges'),
       
       // Firewall
@@ -177,6 +178,23 @@ export default class UIManager {
     if (this.elements.attackBandwidthValue) {
       this.elements.attackBandwidthValue.textContent = `${attackBandwidth.toFixed(1)}x`;
     }
+    
+    // Update attacker icon based on device count
+    if (this.elements.attackerIcon) {
+      let icon;
+      if (deviceCount === 1) {
+        icon = '👤'; // Single person (DoS)
+      } else if (deviceCount < 10) {
+        icon = '👥'; // Two people
+      } else if (deviceCount < 50) {
+        icon = '👨‍👩‍👧‍👦'; // Small group
+      } else if (deviceCount < 200) {
+        icon = '🏘️'; // Houses (botnet)
+      } else {
+        icon = '🌐'; // Global network (large-scale DDoS)
+      }
+      this.elements.attackerIcon.textContent = icon;
+    }
   }
 
   updateBotnetRanges(ranges) {
@@ -206,7 +224,7 @@ export default class UIManager {
     
     subnets.forEach(subnet => {
       const isBlocked = blockedIPs.has(subnet);
-      const checkboxId = `check-ip-${subnet.replace(/\./g, '-')}`;
+      const checkboxId = `check-ip-${subnet.replaceAll('.', '-')}`;
       
       const label = document.createElement('label');
       label.className = 'flex items-center';
@@ -215,7 +233,7 @@ export default class UIManager {
       input.type = 'checkbox';
       input.id = checkboxId;
       input.className = 'mr-2 subnet-checkbox';
-      input.setAttribute('data-subnet', subnet);
+      input.dataset.subnet = subnet;
       if (isBlocked) {
         input.checked = true;
       }

@@ -11,6 +11,7 @@ export default class Server {
     this.happinessScore = 100;
     this.droppedPackets = 0;
     this.status = SERVER_STATUS.ONLINE;
+    this.bandwidthCapacityMultiplier = 1; // 1.0 = baseline, higher = more capacity
   }
 
   getCurrentLoad() {
@@ -54,9 +55,13 @@ export default class Server {
       return { allowed: true, reason: 'OK' };
     }
 
+    // Volume attacks (UDP/ICMP) target bandwidth - affected by bandwidth capacity
     if (packet.type === PACKET_TYPES.UDP || packet.type === PACKET_TYPES.ICMP) {
-      this.bandwidthUsage = clamp(this.bandwidthUsage + weight * LOAD_PER_PACKET, 0, 100);
-    } else if (packet.type === PACKET_TYPES.TCP_SYN) {
+      const effectiveLoad = (weight * LOAD_PER_PACKET) / this.bandwidthCapacityMultiplier;
+      this.bandwidthUsage = clamp(this.bandwidthUsage + effectiveLoad, 0, 100);
+    } 
+    // Protocol attacks (TCP SYN) target CPU/RAM - NOT affected by bandwidth capacity
+    else if (packet.type === PACKET_TYPES.TCP_SYN) {
       if (this.activeConnections.length < CONSTANTS.MAX_ACTIVE_CONNECTIONS) {
         this.activeConnections.push({ ttl: CONSTANTS.SYN_CONNECTION_TTL_SECONDS, weight });
         this.cpuLoad = clamp(this.cpuLoad + weight * LOAD_PER_PACKET, 0, 100);

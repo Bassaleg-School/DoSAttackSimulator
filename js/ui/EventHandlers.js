@@ -17,7 +17,11 @@ export default class EventHandlers {
       // Attacker controls
       sliderDeviceCount: document.getElementById('slider-device-count'),
       dropdownAttackType: document.getElementById('dropdown-attack-type'),
+      inputTargetIP: document.getElementById('input-target-ip'),
       sliderAttackBandwidth: document.getElementById('slider-attack-bandwidth'),
+      
+      // Server controls
+      sliderServerCapacity: document.getElementById('slider-server-capacity'),
       
       // Firewall controls
       btnToggleFirewall: document.getElementById('btn-toggle-firewall'),
@@ -29,6 +33,7 @@ export default class EventHandlers {
       checkRateLimit: document.getElementById('check-rate-limit'),
       sliderRateLimit: document.getElementById('slider-rate-limit'),
       rateLimitControls: document.getElementById('rate-limit-controls'),
+      dropdownRateLimitScope: document.getElementById('dropdown-rate-limit-scope'),
       checkLoadBalancing: document.getElementById('check-load-balancing')
     };
   }
@@ -36,6 +41,7 @@ export default class EventHandlers {
   attachAll() {
     this.attachSimulationControls();
     this.attachAttackerControls();
+    this.attachServerControls();
     this.attachFirewallControls();
   }
 
@@ -84,9 +90,16 @@ export default class EventHandlers {
         
         // Reset UI controls to defaults
         if (this.elements.sliderDeviceCount) this.elements.sliderDeviceCount.value = 1;
-        if (this.elements.sliderAttackBandwidth) this.elements.sliderAttackBandwidth.value = 1.0;
+        if (this.elements.sliderAttackBandwidth) this.elements.sliderAttackBandwidth.value = 1;
         if (this.elements.dropdownAttackType) this.elements.dropdownAttackType.value = 'UDP';
-        this.uiManager.updateAttackerInfo(1, 1.0);
+        if (this.elements.inputTargetIP) this.elements.inputTargetIP.value = '203.0.113.10';
+        if (this.elements.dropdownRateLimitScope) this.elements.dropdownRateLimitScope.value = 'ALL';
+        if (this.elements.sliderServerCapacity) {
+          this.elements.sliderServerCapacity.value = 1;
+          const label = document.getElementById('server-capacity-value');
+          if (label) label.textContent = '1.0x';
+        }
+        this.uiManager.updateAttackerInfo(1, 1);
       });
     }
   }
@@ -117,11 +130,31 @@ export default class EventHandlers {
       });
     }
 
+    if (this.elements.inputTargetIP) {
+      this.elements.inputTargetIP.addEventListener('input', (e) => {
+        this.orchestrator.attacker.targetIP = e.target.value;
+      });
+    }
+
     if (this.elements.sliderAttackBandwidth) {
       this.elements.sliderAttackBandwidth.addEventListener('input', (e) => {
         const value = parseFloat(e.target.value);
         this.orchestrator.attacker.bandwidthMultiplier = value;
         this.uiManager.updateAttackerInfo(this.orchestrator.attacker.deviceCount, value);
+      });
+    }
+  }
+
+  attachServerControls() {
+    if (this.elements.sliderServerCapacity) {
+      this.elements.sliderServerCapacity.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        this.orchestrator.server.bandwidthCapacityMultiplier = value;
+        // Update the UI label
+        const label = document.getElementById('server-capacity-value');
+        if (label) {
+          label.textContent = value.toFixed(1) + 'x';
+        }
       });
     }
   }
@@ -195,6 +228,12 @@ export default class EventHandlers {
         if (this.uiManager.elements.rateLimitValue) {
           this.uiManager.elements.rateLimitValue.textContent = value;
         }
+      });
+    }
+
+    if (this.elements.dropdownRateLimitScope) {
+      this.elements.dropdownRateLimitScope.addEventListener('change', (e) => {
+        this.orchestrator.firewall.rateLimitScope = e.target.value;
       });
     }
 

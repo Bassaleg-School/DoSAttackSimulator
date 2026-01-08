@@ -1,5 +1,12 @@
 # **Functional Specification: Interactive DoS/DDoS Attack Simulator**
 
+---
+Spec-Version: 1.1.0
+Last-Updated: 2026-01-08
+Changelog: CHANGELOG.md
+Summary: Clarifies Happiness recovery behaviour; adds metadata header
+---
+
 ## **1\. Pedagogical Overview & Curriculum Links**
 
 Target Audience: KS3 Digital Technology / GCSE Computer Science (WJEC).  
@@ -133,8 +140,8 @@ The Happiness Score represents how well legitimate users are being served:
   * A genuine user packet is dropped (server overloaded, bandwidth full, or blocked by firewall).  
   * **Formula:** `Happiness = 100 - (droppedPackets × 2)`, clamped to 0-100.  
   * Each dropped legitimate packet reduces happiness by 2%.  
-* **Recovery:** Happiness does NOT automatically recover. It represents cumulative damage during the attack.  
-* **False Positive Penalty:** If the firewall blocks a genuine user (172.16.0.x range), it counts as a dropped packet.
+* **Recovery:** Happiness recalculates in real-time using the formula above. As the number of dropped legitimate packets decreases (for example after the attack is mitigated and genuine traffic is being successfully served), Happiness will gradually recover toward 100%, clamped to 0-100. Recovery will not occur while genuine users are still being blocked by firewall rules. The `Reset Simulation` button still immediately restores Happiness to 100%.  
+* **False Positive Penalty:** If the firewall blocks a genuine user (172.16.0.x range), it counts as a dropped packet.  
 
 ### **Packet Generation Rates**
 
