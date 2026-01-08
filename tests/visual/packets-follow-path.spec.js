@@ -242,7 +242,7 @@ test.describe('Canvas Rendering - Packet Trajectory', () => {
     await page.waitForTimeout(500);
 
     // Start attack
-    await page.fill('#slider-device-count', '10');
+    await page.locator('#slider-device-count').fill('10');
     await page.click('#btn-start-attack');
     await page.waitForTimeout(1500);
 
