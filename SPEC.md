@@ -1,10 +1,10 @@
 # **Functional Specification: Interactive DoS/DDoS Attack Simulator**
 
 ---
-Spec-Version: 1.1.0
+Spec-Version: 1.2.0
 Last-Updated: 2026-01-08
 Changelog: CHANGELOG.md
-Summary: Clarifies Happiness recovery behaviour; adds metadata header
+Summary: Adds Reverse Proxy mitigation (public IP vs origin IP); clarifies Target IP behaviour
 ---
 
 ## **1\. Pedagogical Overview & Curriculum Links**
@@ -32,7 +32,8 @@ The screen is divided into three distinct columns to represent the flow of data.
   * **Range:** 1 (DoS) to 1,000+ (DDoS).  
   * **Visual Change:** Icon changes from a single hooded figure to a global network map as the number increases.  
 * **Target Selection:**  
-  * Input field for IP Address (defaults to Victim Server).  
+  * Input field for IP Address (defaults to the Victim **Public IP**).
+  * **Clarification (v1.2):** The victim may be fronted by a Reverse Proxy mitigation, in which case the Public IP is the proxy IP and the origin server IP is not directly reachable.
 * **Attack Method (Dropdown):**  
   * **UDP Flood (Volume):** High speed, fills the pipe.  
   * **SYN Flood (Protocol):** Sticks to the server, fills memory.  
@@ -109,6 +110,35 @@ Allows the student to configure rules to block traffic.
   * **Behaviour:** Automatically drops traffic if it exceeds the threshold from a single IP. Counter resets every second.  
   * *Effectiveness:* Highly effective against DoS (single source), less effective against DDoS (distributed sources).
 
+#### **4\. Reverse Proxy / DDoS Protection (New Feature)**
+
+This mitigation represents placing a managed Reverse Proxy / DDoS scrubbing service *in front* of the victim.
+
+* **Core Concept (technical fidelity):**
+  * The victim has an **Origin IP** (the real server address) and a **Public IP** (the address attackers/users target).
+  * When the Reverse Proxy is enabled, the **Public IP changes** to a **Proxy IP**. Legitimate users automatically follow the Public IP (simulates DNS pointing at the proxy).
+  * The origin server becomes **origin-shielded**: it only accepts inbound packets that come **from the proxy network**.
+
+* **Player-visible behaviour:**
+  * **Enabling Reverse Proxy** immediately reduces successful attack impact *unless* the attacker retargets the new Public IP.
+  * The Attacker Panel Target IP input remains editable; attacks only “land” if the target matches the victim **Public IP**.
+  * The Victim Panel should display both:
+    * **Public IP (what the internet sees)**
+    * **Origin IP (server address)**
+
+* **Traffic / filtering behaviour:**
+  * The proxy performs **L3/L4 scrubbing**:
+    * Drops obviously malicious traffic according to active Firewall / rate-limit rules (conceptually “at the edge”).
+    * For **TCP SYN floods**, the proxy acts as a **SYN proxy** so half-open connections do not accumulate on the origin.
+  * The proxy has a high but finite capacity; it can still be saturated at extreme DDoS settings.
+
+* **Logging / analysis fidelity:**
+  * The Traffic Analyzer should show (when proxy is enabled) both:
+    * **Client IP** (original bot/user source)
+    * **Edge IP** (proxy egress IP seen by the origin)
+    * **Destination IP** (victim Public IP)
+  * **Learning outcome:** students see why naive IP blocking can fail if everything appears to originate from the proxy, and why reverse proxies commonly preserve client IP via headers / metadata.
+
 ## **4\. Simulation Logic & Sandbox Environment**
 
 The simulator operates as a fully open sandbox. Students are not guided through pre-set levels; they must manually configure the variables on the Attacker Panel to test hypotheses. The "scenarios" below serve as examples of outcomes the engine must support based on student configuration.
@@ -118,7 +148,7 @@ The simulator operates as a fully open sandbox. Students are not guided through 
 * **Device Count:** Slider allows 1 to 1000+ (Linear scaling of particle generation).  
 * **Attack Bandwidth (New):** Slider to adjust the data rate/packet size per device (simulates connection speed of the botnet).  
 * **Attack Type:** Dropdown allows selection of UDP (High bandwidth), TCP SYN (High CPU), or ICMP.  
-* **Target IP:** Students can type any IP; attack only registers if it matches Victim IP.
+* **Target IP:** Students can type any IP; attack only registers if it matches the Victim **Public IP**.
 
 ### **Configurable Variables (Victim Side)**
 
@@ -324,8 +354,15 @@ To ensure maintainability, the code is split by responsibility.
 All configurable values should be defined in a central constants file:
 
 ```javascript
-// Victim
-VICTIM_IP: "203.0.113.10", // fixed reference IP for the server (documentation/test range)
+// Victim / Addressing
+VICTIM_ORIGIN_IP: "203.0.113.10", // fixed origin server IP (documentation/test range)
+VICTIM_PUBLIC_IP: "203.0.113.10", // defaults to origin; may change when Reverse Proxy is enabled
+
+// Reverse Proxy / DDoS Protection
+REVERSE_PROXY_ENABLED: false,
+PROXY_PUBLIC_IP: "198.51.100.20", // proxy front-door IP (documentation/test range)
+PROXY_EGRESS_IP_PREFIX: "198.51.100", // origin will see traffic from this network when proxy is enabled
+ORIGIN_SHIELDING_ENABLED: true,
 
 // Traffic Generation
 GENUINE_USER_COUNT: 50,
@@ -417,6 +454,7 @@ COLOR_LEGITIMATE: "#22C55E",
 COLOR_UDP: "#EF4444",
 COLOR_ICMP: "#F97316",
 COLOR_TCP_SYN: "#EF4444",
+COLOR_FORWARDED: "#22D3EE", // cyan (Tailwind cyan-400): packets forwarded proxy → origin
 COLOR_BLOCKED: "#6B7280",
 COLOR_TIMEOUT: "#000000",
 ```
@@ -430,7 +468,9 @@ Represents a single unit of traffic.
   * speed: Float (Based on bandwidth settings).  
   * type: Enum (TCP\_SYN, UDP, ICMP, HTTP\_GET).  
   * isMalicious: Boolean.  
-  * sourceIP: String (e.g., "192.168.1.50").  
+  * sourceIP: String (e.g., "192.168.1.50").
+  * destinationIP: String (the IP this packet is targeting; compare to Victim Public IP).
+  * clientIP: String (optional; original source IP when traffic is proxied and client IP is preserved).
   * payloadSize: Integer.
 
 ### **3.2 Attacker.js**
@@ -502,7 +542,8 @@ The mitigation engine.
   * loadBalancingEnabled: Boolean.  
 * **Method inspect(packet):**  
   * Checks protocol against blockedProtocols.  
-  * Checks IP subnet against blockedIPs (extracts first 3 octets).  
+  * Checks IP subnet against blockedIPs (extracts first 3 octets).
+  * **Clarification (v1.2):** When Reverse Proxy is enabled and `clientIP` is present, IP-based blocking/rate limiting should use the **client IP** (end-user/bot) rather than the proxy egress IP. If `clientIP` is not present, IP-based controls act on the observed `sourceIP` (proxy), illustrating the loss of per-client visibility.
   * If rateLimitEnabled, checks if IP exceeds threshold (resets counter each second). Rate limiting is applied only if the packet protocol is within `rateLimitProtocols` (or `ALL`).  
   * Returns Object: `{allowed: Boolean, reason: String}`.  
   * Logs decisions to the Traffic Analyzer (see logging clarification below).  
@@ -529,6 +570,8 @@ We will use the **HTML5 Canvas API** for the middle panel to ensure 60FPS perfor
 * **The "Pipe":** A rounded rectangle (800px × 80px) centered vertically, representing the bandwidth conduit.  
 * **Pipe Saturation Effect:** As bandwidth usage increases, the pipe's background colour transitions from light grey (0%) to red (100%).  
 * **Load Balancing Mode:** When enabled, render two parallel pipes (each 800px × 35px) with a 10px gap.
+* **Reverse Proxy Mode (v1.2):** When Reverse Proxy is enabled, render a small "Proxy" node inside the pipe, near the server end.
+  * Visually treat the pipe as two segments: **Public (Internet → Proxy)** then **Origin (Proxy → Server)**.
 
 ### **Particle Rendering**
 
@@ -542,17 +585,32 @@ Each packet type has distinct visual representation for accessibility:
 | TCP SYN | Triangle (▲) | Red (#EF4444) | 12px base |
 | Half-Open Connection | Lock icon (🔒) | Red (#EF4444) | 16px |
 
+**Reverse Proxy forwarding visual rule (v1.2):** When a packet is forwarded from proxy → origin, it keeps its **shape** but is recoloured **cyan** (#22D3EE) while traversing the origin segment. This differentiates "public" traffic from "forwarded" traffic.
+
 ### **Animation Loop**
 
 1. **Clear** canvas with background colour.  
 2. **Update** all packet positions: `x += speed × dt` (speed: 150px/sec for legitimate, 200px/sec for malicious).  
-3. **Collision Detection:**  
-   * If `x > pipeEndX`: Packet reaches server → trigger Firewall.inspect(), then Server.receive().  
-  * If bandwidth > 95%: Legitimate packets are dropped due to congestion (simplified). They turn **black** (timeout) and quickly disappear.  
+3. **Collision Detection:**
+   * **Inspection point:**
+     * If Reverse Proxy is **disabled**: inspection occurs at `pipeEndX` (just before the server).
+     * If Reverse Proxy is **enabled**: inspection occurs at `proxyX` (just before the proxy node).
+   * **At the inspection point:**
+     * Trigger `Firewall.inspect(packet)`.
+     * If not allowed: the packet turns **grey** and quickly disappears at the inspection point.
+     * If allowed and Reverse Proxy is enabled:
+       * Mark the packet as **forwarded** (set `clientIP` to the original sender if not already present).
+       * Set `sourceIP` to a proxy egress IP (from `PROXY_EGRESS_IP_PREFIX`) to simulate what the origin observes.
+       * Recolour the packet to **cyan** while it travels proxy → origin.
+   * **At the server:**
+     * If Reverse Proxy is enabled and Origin Shielding is enabled, the server only accepts packets arriving from the proxy egress network.
+     * Allowed packets reaching the server trigger `Server.receive()`.
+   * If bandwidth > 95%: Legitimate packets are dropped due to congestion (simplified). They turn **black** (timeout) and quickly disappear.
 4. **Draw** all active packets using appropriate shapes.  
 5. **Draw** the particle legend below the canvas.
 
 **Firewall block visual rule (v1):** If Firewall.inspect() returns not allowed, the packet turns **grey** and quickly disappears without reaching Server.receive().
+**Clarification (v1.2):** When Reverse Proxy is enabled, this grey "blocked" disappearance occurs at the **proxy node** (edge), not at the server.
 
 ### **Server Visual Feedback**
 
@@ -633,6 +691,9 @@ A horizontal bar at the top with simulation controls:
 
 ### **Victim Panel (Right)**
 
+* **Addressing (v1.2):**
+  * Always display the server **Origin IP**.
+  * When Reverse Proxy is enabled, also display the **Public IP** (proxy front-door IP) with a clear label (e.g., "Public IP (via Proxy)").
 * **Health Bars:** CSS width transition for smooth 60fps updates. Two bars: Bandwidth and CPU/RAM.  
 * **Status Indicator:** Large icon that changes colour (green/amber/red) based on server status.  
 * **Happiness Score:** Prominent percentage display with colour coding (green ≥80%, amber 50-79%, red <50%).  
