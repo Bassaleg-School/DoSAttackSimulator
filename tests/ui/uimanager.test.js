@@ -25,6 +25,7 @@ describe('UIManager', () => {
           <div id="analyzer-logs"></div>
           <span id="stat-active-packets"></span>
           <span id="stat-bandwidth"></span>
+          <span id="stat-active-halfopen"></span>
           <span id="device-count-value"></span>
           <span id="attack-bandwidth-value"></span>
           <div id="botnet-ranges"></div>
@@ -130,7 +131,7 @@ describe('UIManager', () => {
 
   it('should update analyzer logs with color coding', () => {
     const logs = [
-      { ip: '1.2.3.4', type: 'UDP', action: 'BLOCKED', reason: 'BLOCK_PROTOCOL' },
+      { ip: '1.2.3.4', type: 'UDP', action: 'BLOCKED', reason: 'BLOCK_PROTOCOL', weight: 100 },
       { ip: '5.6.7.8', type: 'HTTP_GET', action: 'ALLOWED', reason: 'OK' }
     ];
     
@@ -139,6 +140,7 @@ describe('UIManager', () => {
     const analyzerLogs = document.getElementById('analyzer-logs');
     expect(analyzerLogs.textContent).toContain('BLOCKED');
     expect(analyzerLogs.textContent).toContain('ALLOWED');
+    expect(analyzerLogs.textContent).toContain('×100');
     expect(analyzerLogs.innerHTML).toContain('text-red-400'); // Blocked is red
     expect(analyzerLogs.innerHTML).toContain('text-emerald-400'); // Allowed is green
   });
@@ -150,14 +152,16 @@ describe('UIManager', () => {
     expect(analyzerLogs.textContent).toContain('No traffic');
   });
 
-  it('should update network stats', () => {
-    uiManager.updateNetworkStats(42, 65);
+  it('should update network stats with abbreviations and half-open count', () => {
+    uiManager.updateNetworkStats(4200, 65, 15);
     
     const activePackets = document.getElementById('stat-active-packets');
     const bandwidth = document.getElementById('stat-bandwidth');
+    const halfOpen = document.getElementById('stat-active-halfopen');
     
-    expect(activePackets.textContent).toBe('42');
+    expect(activePackets.textContent).toBe('4.2k');
     expect(bandwidth.textContent).toBe('65%');
+    expect(halfOpen.textContent).toBe('15');
   });
 
   it('should update attacker info', () => {
@@ -214,8 +218,10 @@ describe('UIManager', () => {
         status: SERVER_STATUS.ONLINE,
         bandwidthUsage: 45,
         cpuLoad: 30,
-        happinessScore: 85
+        happinessScore: 85,
+        activeConnectionWeight: 10
       },
+      aggregates: { activeWeighted: 123 },
       analyzerLogs: [],
       particles: [{ x: 0, y: 0 }]
     };

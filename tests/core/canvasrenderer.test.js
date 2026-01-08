@@ -2,6 +2,27 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import CanvasRenderer from '../../js/core/CanvasRenderer.js';
 import { PACKET_TYPES, CONSTANTS } from '../../js/constants.js';
 
+function OrchestratorStateStub(overrides = {}) {
+  const base = {
+    server: { bandwidthUsage: 0, cpuLoad: 0, activeConnections: 0 },
+    firewall: { loadBalancingEnabled: false },
+    particles: [],
+    networkNodes: {
+      attacker: { label: 'ATT', badge: 'UDP' },
+      proxy: { enabled: false, badge: '', badgeMode: 'ip' },
+      server: { label: 'LEG', badge: '' }
+    }
+  };
+  return {
+    ...base,
+    ...overrides,
+    networkNodes: {
+      ...base.networkNodes,
+      ...(overrides.networkNodes || {})
+    }
+  };
+}
+
 describe('CanvasRenderer', () => {
   let canvas;
   let ctx;
@@ -38,6 +59,30 @@ describe('CanvasRenderer', () => {
   it('should initialize canvas with correct dimensions', () => {
     expect(canvas.width).toBe(CONSTANTS.CANVAS_WIDTH);
     expect(canvas.height).toBe(CONSTANTS.CANVAS_HEIGHT);
+  });
+
+  it('includes scale legend entries derived from constants', () => {
+    const renderer = new CanvasRenderer(canvas, 0);
+    const legend = renderer.getLegendData();
+    const firstLabel = legend[0].label;
+    expect(firstLabel).toContain(`(${CONSTANTS.PACKET_VISUAL_SCALE_LABEL}${CONSTANTS.PACKET_VISUAL_SCALE} each)`);
+  });
+
+  it('renders network node badges for attacker, proxy, and server', () => {
+    const renderer = new CanvasRenderer(canvas, 0);
+    const state = OrchestratorStateStub({
+      networkNodes: {
+        attackerCount: 10,
+        legitUserCount: 2,
+        proxy: { enabled: true, badgeMode: 'count', trafficLabel: '5', publicIP: '198.51.100.10' },
+        server: { label: 'LEG', badge: '20' },
+        origin: { status: 'HEALTHY', ip: '203.0.113.20' }
+      }
+    });
+
+    renderer.drawNetworkNodes(state);
+    const labels = ctx.fillText.mock.calls.map((call) => call[0]);
+    expect(labels).toEqual(expect.arrayContaining(['ATT', 'LEG', '5', 'ORIG']));
   });
 
   it('should clear canvas with background color', () => {

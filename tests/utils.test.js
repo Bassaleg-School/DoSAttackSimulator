@@ -16,7 +16,7 @@ describe('utils', () => {
     const samples = Array.from({ length: 100 }, () => generateRandomIP());
     samples.forEach((ip) => {
       expect(ip.startsWith('172.16.0.')).toBe(false);
-      const parts = ip.split('.').map((part) => Number(part));
+      const parts = ip.split('.').map(Number);
       expect(parts).toHaveLength(4);
       parts.forEach((part) => {
         expect(Number.isInteger(part)).toBe(true);
