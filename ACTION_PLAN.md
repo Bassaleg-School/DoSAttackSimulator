@@ -40,17 +40,16 @@ Status:
 Tests:
 - Packet defaults/isMalicious inference verified; IP ranges bounded to 172.16.0.1-50; rate math matches 50 pps with fractional dt accumulation.
 
-### 4) Attacker Model
+### 4) Attacker Model ✅
 Deliverables:
 - State: deviceCount, attackType (UDP, TCP_SYN, ICMP), targetIP, bandwidthMultiplier, isAttacking, botnetRanges.
-- `generateBotnetRanges()` 1 /24 per 20 devices, avoids 172.16.0.*.
-- `spawnPacket()` honoring attackType base rates; apply visual cap with `trafficWeight`.
+- `generateBotnetRanges()` 1 /24 per 20 devices, avoids 172.16.0.* with guarded generation + deterministic fallback for uniqueness.
+- `spawnPacket()` honors attackType base rates; visual cap applied with `trafficWeight` to preserve load math.
 - Desired PPS = deviceCount × baseRate × bandwidthMultiplier; visualPps = min(desiredPps, VISUAL_SPAWN_CAP_PER_SECOND).
+Status:
+- Implemented Attacker with rate math, botnet range generation, packet spawning and trafficWeight scaling.
 Tests:
-- Range count matches devices/20 (ceil).
-- No botnet subnet equals 172.16.0.
-- Desired vs visual Pps; `trafficWeight = desired/visual` when capped.
-- AttackType selects correct base rate.
+- Range count matches ceil(devices/20) and excludes genuine subnet; base rates mapped by attack type; desired vs visual PPS with trafficWeight verification; accumulator honors fractional dt.
 
 ### 5) Server Model
 Deliverables:
