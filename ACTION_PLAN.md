@@ -62,18 +62,15 @@ Status:
 Tests:
 - Volume increase/decay, SYN add+TTL expiry, status transitions (degraded/crashed/recover), HTTP_GET drop when crashed with happiness penalty validated.
 
-### 6) Firewall Model
+### 6) Firewall Model ✅
 Deliverables:
 - State: blockedProtocols, blockedIPs (/24 strings), rate limiting (threshold, per-IP counters, reset per second, protocol scope), loadBalancingEnabled flag, detected subnets tracking.
-- `inspect(packet)` returns {allowed, reason}; applies protocol block, /24 blacklist, rate limit when enabled, respects protocol scope or ALL.
-- Rate limiting only active when firewall dashboard is open/enabled (matches spec gating).
+- `inspect(packet)` returns {allowed, reason}; applies protocol block, /24 blacklist, rate limit when enabled and dashboard open, respecting protocol scope or ALL.
 - `getDetectedSubnets()` aggregates seen /24s.
+Status:
+- Implemented firewall with protocol/IP blocking, gated rate limiting, per-IP counters, protocol scopes, detected subnet tracking.
 Tests:
-- Blocking TCP rejects HTTP_GET and TCP_SYN.
-- Blocking UDP/ICMP works individually.
-- /24 blacklist blocks matching IP, allows others.
-- Rate limit: counters reset each second; over-threshold blocks; protocol-scoped behavior verified; inactive when dashboard closed.
-- Detected subnets list grows with traffic.
+- Protocol blocks for TCP (HTTP_GET/TCP_SYN) and individual UDP/ICMP; subnet blacklist; rate limit window reset and scope behavior; inactive when dashboard closed; detected subnet accumulation.
 
 ### 7) Simulation Orchestration & Game Loop
 Deliverables:
