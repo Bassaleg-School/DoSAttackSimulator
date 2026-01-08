@@ -132,11 +132,13 @@ describe('Server', () => {
       server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
     }
     expect(server.happinessScore).toBeLessThan(100);
+    expect(server.droppedPacketEvents.length).toBeGreaterThan(0);
     
-    // Reset should restore happiness
+    // Reset should restore happiness and clear dropped packet events
     server.reset();
     expect(server.happinessScore).toBe(100);
     expect(server.droppedPackets).toBe(0);
+    expect(server.droppedPacketEvents).toEqual([]);
   });
 
   // v1.2 Tests: Reverse Proxy

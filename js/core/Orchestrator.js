@@ -84,9 +84,7 @@ export default class Orchestrator {
         if (!particle.isMalicious && this.server.bandwidthUsage > CONSTANTS.BANDWIDTH_COLLISION_THRESHOLD) {
           // Mark as dropped due to timeout (collision/congestion)
           particle.droppedByCollision = true;
-          // v1.1: Use method to track dropped packet with TTL
-          this.server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
-          this.server.updateHappiness();
+          this.server.recordDroppedPacket();
           this.logAnalyzerEvent({
             ip: particle.sourceIP,
             type: particle.type,
@@ -109,7 +107,7 @@ export default class Orchestrator {
 
   processArrival(particle) {
     // v1.2: Check if packet is targeting the correct IP
-    // If reverse proxy is enabled and origin shielding is active, only packets to public IP or from proxy reach server
+    // If reverse proxy is enabled, only packets to public IP reach the proxy
     if (this.server.reverseProxyEnabled) {
       // If packet destination doesn't match public IP, it doesn't reach the proxy
       if (particle.destinationIP !== this.server.publicIP) {
@@ -128,7 +126,7 @@ export default class Orchestrator {
         particle.clientIP = particle.sourceIP;
       }
       // Change sourceIP to proxy egress IP (random host in proxy egress network)
-      const proxyEgressHost = Math.floor(Math.random() * 256); // 0-255 (standard IP octet range)
+      const proxyEgressHost = Math.floor(Math.random() * 254) + 1; // 1-254 (valid host addresses)
       particle.sourceIP = `${CONSTANTS.PROXY_EGRESS_IP_PREFIX}.${proxyEgressHost}`;
       particle.isForwarded = true; // Mark for visualization
     } else if (particle.destinationIP !== this.server.publicIP) {
@@ -155,10 +153,9 @@ export default class Orchestrator {
         reason: firewallResult.reason
       });
       
-      // If legitimate packet was blocked, count as dropped (v1.1: with TTL)
+      // If legitimate packet was blocked, count as dropped
       if (!particle.isMalicious) {
-        this.server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
-        this.server.updateHappiness();
+        this.server.recordDroppedPacket();
       }
       return;
     }
@@ -185,8 +182,7 @@ export default class Orchestrator {
     } else {
       // Crash short-circuit: server crashed, all packets are dropped
       if (!particle.isMalicious) {
-        this.server.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
-        this.server.updateHappiness();
+        this.server.recordDroppedPacket();
       }
       this.logAnalyzerEvent({
         ip: particle.clientIP || particle.sourceIP,

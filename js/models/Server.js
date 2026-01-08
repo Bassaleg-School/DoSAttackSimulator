@@ -60,8 +60,7 @@ export default class Server {
       const load = this.getCurrentLoad();
       if (this.status === SERVER_STATUS.CRASHED || load >= CONSTANTS.SERVER_CRASHED_THRESHOLD) {
         // v1.1: Track dropped packet with TTL for recovery
-        this.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
-        this.updateHappiness();
+        this.recordDroppedPacket();
         return { allowed: false, reason: 'CRASHED' };
       }
       return { allowed: true, reason: 'OK' };
@@ -92,7 +91,6 @@ export default class Server {
     );
     this.cpuLoad = clamp(this.cpuLoad - CONSTANTS.CPU_DECAY_RATE * dtSeconds, 0, 100);
 
-    // Expire old SYN connections
     const remaining = [];
     for (const conn of this.activeConnections) {
       const ttl = conn.ttl - dtSeconds;
@@ -136,11 +134,17 @@ export default class Server {
   
   // v1.2: Toggle reverse proxy
   setReverseProxyEnabled(enabled) {
-    this.reverseProxyEnabled = enabled;
-    if (enabled) {
+    this.reverseProxyEnabled = !!enabled; // Coerce to boolean
+    if (this.reverseProxyEnabled) {
       this.publicIP = CONSTANTS.PROXY_PUBLIC_IP;
     } else {
       this.publicIP = CONSTANTS.VICTIM_PUBLIC_IP;
     }
+  }
+  
+  // v1.1: Record a dropped packet with TTL for happiness recovery
+  recordDroppedPacket() {
+    this.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
+    this.updateHappiness();
   }
 }
