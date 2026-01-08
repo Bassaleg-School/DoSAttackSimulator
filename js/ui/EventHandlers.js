@@ -20,6 +20,9 @@ export default class EventHandlers {
       inputTargetIP: document.getElementById('input-target-ip'),
       sliderAttackBandwidth: document.getElementById('slider-attack-bandwidth'),
       
+      // Server controls
+      sliderServerCapacity: document.getElementById('slider-server-capacity'),
+      
       // Firewall controls
       btnToggleFirewall: document.getElementById('btn-toggle-firewall'),
       firewallDashboard: document.getElementById('firewall-dashboard'),
@@ -38,6 +41,7 @@ export default class EventHandlers {
   attachAll() {
     this.attachSimulationControls();
     this.attachAttackerControls();
+    this.attachServerControls();
     this.attachFirewallControls();
   }
 
@@ -89,6 +93,11 @@ export default class EventHandlers {
         if (this.elements.sliderAttackBandwidth) this.elements.sliderAttackBandwidth.value = 1.0;
         if (this.elements.dropdownAttackType) this.elements.dropdownAttackType.value = 'UDP';
         if (this.elements.inputTargetIP) this.elements.inputTargetIP.value = '203.0.113.10';
+        if (this.elements.sliderServerCapacity) {
+          this.elements.sliderServerCapacity.value = 1.0;
+          const label = document.getElementById('server-capacity-value');
+          if (label) label.textContent = '1.0x';
+        }
         this.uiManager.updateAttackerInfo(1, 1.0);
       });
     }
@@ -131,6 +140,20 @@ export default class EventHandlers {
         const value = parseFloat(e.target.value);
         this.orchestrator.attacker.bandwidthMultiplier = value;
         this.uiManager.updateAttackerInfo(this.orchestrator.attacker.deviceCount, value);
+      });
+    }
+  }
+
+  attachServerControls() {
+    if (this.elements.sliderServerCapacity) {
+      this.elements.sliderServerCapacity.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        this.orchestrator.server.bandwidthCapacityMultiplier = value;
+        // Update the UI label
+        const label = document.getElementById('server-capacity-value');
+        if (label) {
+          label.textContent = value.toFixed(1) + 'x';
+        }
       });
     }
   }
