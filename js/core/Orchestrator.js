@@ -88,6 +88,11 @@ export default class Orchestrator {
             action: 'DROPPED',
             reason: 'COLLISION'
           });
+          // Keep particle for one more frame so users can see it turn black
+          remaining.push(particle);
+        } else if (particle.droppedByCollision) {
+          // Particle was marked as dropped in previous frame, now remove it
+          // (don't add to remaining)
         } else {
           remaining.push(particle);
         }

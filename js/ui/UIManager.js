@@ -145,14 +145,20 @@ export default class UIManager {
       return;
     }
     
+    // Clear and rebuild with proper DOM manipulation to avoid injection
+    this.elements.analyzerLogs.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    
     // Show last 20 logs
-    this.elements.analyzerLogs.innerHTML = logs
-      .slice(0, 20)
-      .map(log => {
-        const colorClass = log.action === 'BLOCKED' || log.action === 'DROPPED' ? 'text-red-400' : 'text-emerald-400';
-        return `<div class="${colorClass}">${log.ip} ${log.type} ${log.action}</div>`;
-      })
-      .join('');
+    logs.slice(0, 20).forEach(log => {
+      const div = document.createElement('div');
+      const colorClass = log.action === 'BLOCKED' || log.action === 'DROPPED' ? 'text-red-400' : 'text-emerald-400';
+      div.className = colorClass;
+      div.textContent = `${log.ip} ${log.type} ${log.action}`;
+      fragment.appendChild(div);
+    });
+    
+    this.elements.analyzerLogs.appendChild(fragment);
   }
 
   updateNetworkStats(activePackets, bandwidth) {
@@ -194,18 +200,35 @@ export default class UIManager {
       return;
     }
     
-    this.elements.ipBlacklist.innerHTML = subnets
-      .map(subnet => {
-        const isBlocked = blockedIPs.has(subnet);
-        const checkboxId = `check-ip-${subnet.replace(/\./g, '-')}`;
-        return `
-          <label class="flex items-center">
-            <input type="checkbox" id="${checkboxId}" data-subnet="${subnet}" ${isBlocked ? 'checked' : ''} class="mr-2 subnet-checkbox">
-            <span>${subnet}.0/24</span>
-          </label>
-        `;
-      })
-      .join('');
+    // Clear and rebuild with proper DOM manipulation to avoid injection
+    this.elements.ipBlacklist.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    
+    subnets.forEach(subnet => {
+      const isBlocked = blockedIPs.has(subnet);
+      const checkboxId = `check-ip-${subnet.replace(/\./g, '-')}`;
+      
+      const label = document.createElement('label');
+      label.className = 'flex items-center';
+      
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = checkboxId;
+      input.className = 'mr-2 subnet-checkbox';
+      input.setAttribute('data-subnet', subnet);
+      if (isBlocked) {
+        input.checked = true;
+      }
+      
+      const span = document.createElement('span');
+      span.textContent = `${subnet}.0/24`;
+      
+      label.appendChild(input);
+      label.appendChild(span);
+      fragment.appendChild(label);
+    });
+    
+    this.elements.ipBlacklist.appendChild(fragment);
     
     // Attach event listeners
     if (onToggleBlock) {

@@ -39,10 +39,13 @@ describe('Mitigation Behaviors Integration', () => {
       orchestrator.firewall.rateLimitThreshold = 5;
 
       orchestrator.attacker.isAttacking = true;
-      orchestrator.attacker.deviceCount = 1;
+      orchestrator.attacker.deviceCount = 10; // Increased to ensure packets are generated
       orchestrator.attacker.generateBotnetRanges();
 
-      orchestrator.update(1);
+      // Run for multiple seconds to ensure packets are processed
+      for (let i = 0; i < 5; i++) {
+        orchestrator.update(1);
+      }
 
       // Should not have any rate limit blocks when dashboard closed
       const blockedLogs = orchestrator.analyzerLogs.filter(log => log.reason === 'RATE_LIMIT');
@@ -51,18 +54,15 @@ describe('Mitigation Behaviors Integration', () => {
   });
 
   describe('Load Balancing', () => {
-    it('should increase effective bandwidth capacity when enabled', () => {
-      // With load balancing, the server should handle more load
-      // This is reflected in the visual rendering (dual pipes)
-      // The actual capacity doubling would be in server bandwidth calculation
-      
+    it('should render dual pipes when load balancing enabled', () => {
+      // Load balancing enables dual pipe visualization
       orchestrator.firewall.loadBalancingEnabled = true;
       
       const state = orchestrator.getState();
       expect(state.firewall.loadBalancingEnabled).toBe(true);
     });
 
-    it('should render dual pipes when load balancing enabled', () => {
+    it('should toggle load balancing flag correctly', () => {
       orchestrator.firewall.loadBalancingEnabled = true;
       const state = orchestrator.getState();
       

@@ -180,7 +180,7 @@ export default class CanvasRenderer {
       { 
         shape: 'lock', 
         color: CONSTANTS.COLOR_TCP_SYN, 
-        label: 'Active Half-Open Connection' 
+        label: 'Active Half-Open Connection (shown on server)' 
       }
     ];
   }

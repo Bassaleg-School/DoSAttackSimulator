@@ -18,6 +18,7 @@ uiManager.renderLegend(renderer.getLegendData());
 eventHandlers.attachAll();
 
 // Create game loop
+let frameCounter = 0;
 const gameLoop = new GameLoop((dt) => {
   // Update simulation
   orchestrator.update(dt);
@@ -28,9 +29,11 @@ const gameLoop = new GameLoop((dt) => {
   // Update UI
   uiManager.update(state);
   
-  // Update IP blacklist periodically (every 60 frames ~= 1 second)
-  if (Math.random() < 0.016) {
+  // Update IP blacklist every 60 frames (~1 second at 60fps)
+  frameCounter += 1;
+  if (frameCounter >= 60) {
     eventHandlers.updateIPBlacklist();
+    frameCounter = 0;
   }
   
   // Render canvas

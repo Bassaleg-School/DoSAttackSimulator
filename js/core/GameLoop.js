@@ -29,6 +29,13 @@ export default class GameLoop {
       const dt = (timestamp - this.lastTimestamp) / 1000; // Convert to seconds
       if (dt > 0) { // Only call update if dt is positive (skip if dt is 0 or negative)
         this.updateCallback(dt);
+      } else if (dt <= 0) {
+        // Log warning for non-positive delta time to help debug timing issues
+        console.warn('GameLoop: non-positive delta time detected, skipping update', {
+          dt,
+          timestamp,
+          lastTimestamp: this.lastTimestamp
+        });
       }
     }
 

@@ -102,7 +102,18 @@ export default class EventHandlers {
 
     if (this.elements.dropdownAttackType) {
       this.elements.dropdownAttackType.addEventListener('change', (e) => {
-        this.orchestrator.attacker.attackType = ATTACK_TYPES[e.target.value];
+        const selectedKey = e.target.value;
+        const selectedAttackType = ATTACK_TYPES[selectedKey];
+        
+        if (!selectedAttackType) {
+          // Fallback to UDP if invalid value
+          console.warn(`Invalid attack type selected: "${selectedKey}". Falling back to UDP.`);
+          this.orchestrator.attacker.attackType = ATTACK_TYPES.UDP;
+          e.target.value = 'UDP';
+          return;
+        }
+        
+        this.orchestrator.attacker.attackType = selectedAttackType;
       });
     }
 

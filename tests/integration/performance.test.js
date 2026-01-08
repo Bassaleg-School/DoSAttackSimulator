@@ -126,15 +126,11 @@ describe('Performance Caps and Stability', () => {
         orchestrator.update(0.1);
       }
 
-      // Most logs should be blocked events
+      // Should have blocked events due to prioritization
       const blockedCount = orchestrator.analyzerLogs.filter(
         log => log.action === 'BLOCKED' || log.action === 'DROPPED'
       ).length;
-      const allowedCount = orchestrator.analyzerLogs.filter(
-        log => log.action === 'ALLOWED'
-      ).length;
-
-      // Should have more blocked/dropped than allowed due to prioritization
+      
       expect(blockedCount).toBeGreaterThan(0);
     });
 
