@@ -194,7 +194,7 @@ test.describe('Canvas Rendering - Packet Trajectory', () => {
     await page.waitForTimeout(500);
 
     // Configure attack with 20 devices
-    await page.fill('#slider-device-count', '20');
+    await page.locator('#slider-device-count').fill('20');
     await page.selectOption('#dropdown-attack-type', 'UDP');
     
     // Start attack
