@@ -62,14 +62,14 @@ describe('CanvasRenderer', () => {
   });
 
   it('includes scale legend entries derived from constants', () => {
-    const renderer = new CanvasRenderer(canvas, 0);
+    const renderer = new CanvasRenderer(canvas);
     const legend = renderer.getLegendData();
     const firstLabel = legend[0].label;
     expect(firstLabel).toContain(`(${CONSTANTS.PACKET_VISUAL_SCALE_LABEL}${CONSTANTS.PACKET_VISUAL_SCALE} each)`);
   });
 
   it('renders network node badges for attacker, proxy, and server', () => {
-    const renderer = new CanvasRenderer(canvas, 0);
+    const renderer = new CanvasRenderer(canvas);
     const state = OrchestratorStateStub({
       networkNodes: {
         attackerCount: 10,
