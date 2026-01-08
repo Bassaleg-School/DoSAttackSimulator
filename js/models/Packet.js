@@ -1,4 +1,4 @@
-import { PACKET_TYPES } from '../constants.js';
+import { PACKET_TYPES, CONSTANTS } from '../constants.js';
 
 export default class Packet {
   constructor({
@@ -11,7 +11,7 @@ export default class Packet {
     destinationIP = '0.0.0.0', // v1.2: target IP for this packet
     clientIP = null, // v1.2: original source IP when traffic is proxied
     payloadSize = 0,
-    trafficWeight = 1
+    trafficWeight = CONSTANTS.PACKET_VISUAL_SCALE
   } = {}) {
     this.x = x;
     this.y = y;
@@ -24,5 +24,20 @@ export default class Packet {
     this.clientIP = clientIP; // v1.2
     this.payloadSize = payloadSize;
     this.trafficWeight = trafficWeight;
+  }
+
+  clone() {
+    return new Packet({
+      x: this.x,
+      y: this.y,
+      speed: this.speed,
+      type: this.type,
+      isMalicious: this.isMalicious,
+      sourceIP: this.sourceIP,
+      destinationIP: this.destinationIP,
+      clientIP: this.clientIP,
+      payloadSize: this.payloadSize,
+      trafficWeight: this.trafficWeight
+    });
   }
 }

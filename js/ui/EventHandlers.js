@@ -36,7 +36,8 @@ export default class EventHandlers {
       rateLimitControls: document.getElementById('rate-limit-controls'),
       dropdownRateLimitScope: document.getElementById('dropdown-rate-limit-scope'),
       checkLoadBalancing: document.getElementById('check-load-balancing'),
-      checkReverseProxy: document.getElementById('check-reverse-proxy')
+      checkReverseProxy: document.getElementById('check-reverse-proxy'),
+      selectProxyBadge: document.getElementById('select-proxy-badge')
     };
   }
 
@@ -45,6 +46,7 @@ export default class EventHandlers {
     this.attachAttackerControls();
     this.attachServerControls();
     this.attachFirewallControls();
+    this.attachDisplayControls();
   }
 
   attachSimulationControls() {
@@ -240,6 +242,14 @@ export default class EventHandlers {
         }
         this.uiManager.updateAddressing(enabled);
         this.uiManager.updateServerIPs(this.orchestrator.server.publicIP, this.orchestrator.server.originIP);
+      });
+    }
+  }
+
+  attachDisplayControls() {
+    if (this.elements.selectProxyBadge) {
+      this.elements.selectProxyBadge.addEventListener('change', (e) => {
+        this.orchestrator.setProxyBadgeMode(e.target.value);
       });
     }
   }

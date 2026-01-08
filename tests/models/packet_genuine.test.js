@@ -13,7 +13,7 @@ describe('Packet', () => {
     expect(packet.sourceIP).toBe('172.16.0.1');
     expect(packet.speed).toBe(10);
     expect(packet.payloadSize).toBe(5);
-    expect(packet.trafficWeight).toBe(1);
+    expect(packet.trafficWeight).toBe(CONSTANTS.PACKET_VISUAL_SCALE);
   });
 
   it('allows explicit malicious flag for attack traffic', () => {
@@ -30,7 +30,7 @@ describe('GenuineTraffic', () => {
     packets.forEach((packet) => {
       expect(packet.type).toBe(PACKET_TYPES.HTTP_GET);
       expect(packet.isMalicious).toBe(false);
-      const octets = packet.sourceIP.split('.').map((p) => Number(p));
+      const octets = packet.sourceIP.split('.').map(Number);
       expect(octets).toHaveLength(4);
       expect(octets[0]).toBe(172);
       expect(octets[1]).toBe(16);

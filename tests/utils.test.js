@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, generateRandomIP, extractSubnet, randomChoice, generateSequentialIps } from '../js/utils.js';
+import { clamp, generateRandomIP, extractSubnet, randomChoice, generateSequentialIps, abbreviateNumber } from '../js/utils.js';
 
 describe('utils', () => {
   it('clamps below, within, and above bounds', () => {
@@ -46,5 +46,12 @@ describe('utils', () => {
   it('generates sequential IPs from prefix', () => {
     expect(generateSequentialIps('172.16.0', 3)).toEqual(['172.16.0.1', '172.16.0.2', '172.16.0.3']);
     expect(generateSequentialIps('10.1.2', 2, 5)).toEqual(['10.1.2.5', '10.1.2.6']);
+  });
+
+  it('abbreviates large numbers with k/m suffixes and rounds small numbers', () => {
+    expect(abbreviateNumber(42)).toBe('42');
+    expect(abbreviateNumber(1500)).toBe('1.5k');
+    expect(abbreviateNumber(2500000)).toBe('2.5m');
+    expect(abbreviateNumber(-1250)).toBe('-1.3k');
   });
 });

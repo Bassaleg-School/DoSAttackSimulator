@@ -1,7 +1,7 @@
 # **Functional Specification: Interactive DoS/DDoS Attack Simulator**
 
 ---
-Spec-Version: 1.3.0
+Spec-Version: 1.3.1
 Last-Updated: 2026-01-08
 Changelog: CHANGELOG.md
 Summary: Adds packet visual scaling, network node badges (attackers/legit/proxy/origin), and aligns metrics with aggregate badge counts
@@ -52,7 +52,7 @@ The screen is divided into three distinct columns to represent the flow of data.
     * **Red Triangles (▲):** TCP SYN Malicious Traffic (Protocol attacks).  
       * *Volume Attack:* Swarms of red/orange squares physically blocking green circles.  
       * *Protocol Attack:* Red triangles arrive and turn into "lock" icons (🔒) on the server, staying there.  
-* **Network Nodes (v1.3):** Show four glyphs on/around the canvas: **Attackers** (left cluster badge = malicious device count), **Legit Users** (left cluster badge = 50), **Proxy** (when enabled, badge = current Public IP), and **Origin Server** (right, status badge). Connect them with lines that glow for allowed flow and dim/pulse when blocked.  
+* **Network Nodes (v1.3):** Show four glyphs on/around the canvas: **Attackers** (left cluster badge = malicious device count), **Legit Users** (left cluster badge = 50), **Proxy** (when enabled, badge = current Public IP with a UI toggle to switch the badge to the aggregate in-flight count), and **Origin Server** (right, status badge). Connect them with lines that glow for allowed flow and dim/pulse when blocked.  
 * **Particle Legend:** A static legend displayed below the canvas showing:  
   * ● Green Circle = Legitimate HTTP Traffic  
   * ■ Red Square = UDP Flood Packet  
@@ -566,7 +566,7 @@ The mitigation engine.
 * **Protocol mapping:** Blocking **TCP** blocks both **HTTP_GET** (legitimate web traffic) and **TCP SYN** (attack traffic).
 * **Rate limit scope:** Rate limiting is only active when the Firewall dashboard is enabled/open in the UI, and can be configured to apply to **ALL** protocols or a selected subset (TCP/UDP/ICMP).
 * **Traffic Analyzer logging:** To avoid UI lockups, the analyzer logs at most `UI_ANALYZER_LOG_MAX_PER_SECOND` entries per second. (Prefer logging BLOCKED/DROPPED events; sample ALLOWED events if there is remaining budget.)
-* **Aggregate badges (v1.3):** Analyzer counters and any per-protocol tallies should use the same aggregate values shown in the attacker/legit badges (e.g., abbreviate 1,000 as 1k) so the numbers stay consistent across UI and metrics.
+* **Aggregate badges (v1.3):** Analyzer counters and any per-protocol tallies should use the same aggregate values shown in the attacker/legit badges (e.g., abbreviate 1,000 as 1k) so the numbers stay consistent across UI and metrics. Logs may append the packet visual scale prefix (e.g., “×100”) to reflect weighted entries.
 
 ## **4\. The Visualisation Engine (Canvas)**
 

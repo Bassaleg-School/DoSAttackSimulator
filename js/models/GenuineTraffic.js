@@ -23,7 +23,7 @@ export default class GenuineTraffic {
       sourceIP,
       payloadSize: 1,
       speed: CONSTANTS.SPEED_LEGITIMATE,
-      trafficWeight: 1
+      trafficWeight: CONSTANTS.PACKET_VISUAL_SCALE
     });
   }
 

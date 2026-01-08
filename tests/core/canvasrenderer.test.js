@@ -21,7 +21,9 @@ describe('CanvasRenderer', () => {
       lineTo: vi.fn(),
       closePath: vi.fn(),
       fill: vi.fn(),
-      stroke: vi.fn()
+      stroke: vi.fn(),
+      setLineDash: vi.fn(),
+      fillText: vi.fn()
     };
 
     canvas = {

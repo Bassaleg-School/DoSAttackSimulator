@@ -45,7 +45,7 @@ describe('Attacker', () => {
     const expectedVisual = Math.min(expectedDesired, CONSTANTS.VISUAL_SPAWN_CAP_PER_SECOND);
     expect(desiredPps).toBe(expectedDesired);
     expect(visualPps).toBe(expectedVisual);
-    expect(trafficWeight).toBeCloseTo(expectedDesired / expectedVisual);
+    expect(trafficWeight).toBeCloseTo((expectedDesired / expectedVisual) * CONSTANTS.PACKET_VISUAL_SCALE);
     packets.forEach((p) => {
       expect(p.trafficWeight).toBeCloseTo(trafficWeight);
     });

@@ -47,7 +47,7 @@ export const CONSTANTS = {
 
   // Bandwidth Multiplier Range
   BANDWIDTH_MULTIPLIER_MIN: 0.5,
-  BANDWIDTH_MULTIPLIER_MAX: 2.0,
+  BANDWIDTH_MULTIPLIER_MAX: 2,
 
   // Device Count Range
   DEVICE_COUNT_MIN: 1,
@@ -69,6 +69,12 @@ export const CONSTANTS = {
 
   // Happiness Calculation
   HAPPINESS_PENALTY_PER_DROP: 2,
+
+  // Packet Visual Scaling (v1.3)
+  PACKET_VISUAL_SCALE: 100, // each rendered particle represents this many real packets
+  PACKET_VISUAL_SCALE_MIN: 10,
+  PACKET_VISUAL_SCALE_MAX: 1000,
+  PACKET_VISUAL_SCALE_LABEL: '×',
 
   // Botnet IP Generation
   DEVICES_PER_SUBNET: 20,

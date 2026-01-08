@@ -2,6 +2,9 @@
 
 All notable changes to the specification are documented in this file.
 
+## [1.3.1] - 2026-01-08
+- Implement packet visual scaling defaults (×100) across malicious and genuine traffic, align happiness/drop accounting to weighted aggregates, and add a proxy badge IP/count toggle with analyzer log scale suffixes to keep badges, logs, and metrics consistent.
+
 ## [1.3.0] - 2026-01-08
 - Clarify that the attacker device-count slider describes a strict 1-1000 range so the UI guidance now matches the control limits documented elsewhere in `SPEC.md` and `constants.js`.
 - Split the UDP/ICMP legend into separate colour callouts, ensuring ICMP flood packets are always described as orange squares per the v1.3 visual alignment notes.

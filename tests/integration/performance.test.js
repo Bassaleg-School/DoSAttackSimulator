@@ -56,7 +56,7 @@ describe('Performance Caps and Stability', () => {
       expect(spawnResult.visualPps).toBe(CONSTANTS.VISUAL_SPAWN_CAP_PER_SECOND);
       
       // Traffic weight should compensate
-      const expectedWeight = 20000 / 300;
+      const expectedWeight = (20000 / 300) * CONSTANTS.PACKET_VISUAL_SCALE;
       expect(spawnResult.trafficWeight).toBeCloseTo(expectedWeight, 1);
       
       // Spawned packets should be at visual cap

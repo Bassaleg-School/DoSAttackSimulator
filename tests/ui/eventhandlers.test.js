@@ -49,7 +49,7 @@ describe('EventHandlers', () => {
       </html>
     `);
     
-    global.document = dom.window.document;
+    globalThis.document = dom.window.document;
     
     orchestrator = new Orchestrator();
     uiManager = new UIManager();
