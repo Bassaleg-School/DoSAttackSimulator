@@ -202,4 +202,161 @@ describe('Orchestrator', () => {
     expect(state.analyzerLogs).toBeDefined();
     expect(state.isSimulationRunning).toBe(false);
   });
+
+  // v1.2 Tests: Destination IP assignment
+  it('should assign server public IP to genuine packets', () => {
+    orchestrator.isSimulationRunning = true;
+    orchestrator.update(0.1); // Spawn some genuine packets
+    
+    expect(orchestrator.particles.length).toBeGreaterThan(0);
+    
+    // All genuine packets should have destinationIP set to server's public IP
+    orchestrator.particles.forEach(packet => {
+      expect(packet.destinationIP).toBe(orchestrator.server.publicIP);
+    });
+  });
+
+  it('should assign attacker target IP to attack packets', () => {
+    orchestrator.attacker.isAttacking = true;
+    orchestrator.attacker.deviceCount = 10;
+    orchestrator.attacker.attackType = ATTACK_TYPES.UDP;
+    orchestrator.attacker.targetIP = '198.51.100.20'; // Set a specific target
+    
+    orchestrator.update(0.1); // Spawn attack packets
+    
+    expect(orchestrator.particles.length).toBeGreaterThan(0);
+    
+    // All attack packets should have destinationIP set to attacker's target IP
+    orchestrator.particles.forEach(packet => {
+      expect(packet.destinationIP).toBe(orchestrator.attacker.targetIP);
+    });
+  });
+
+  it('should update destination IP when server proxy is enabled', () => {
+    orchestrator.isSimulationRunning = true;
+    
+    // Initial spawn with default public IP
+    orchestrator.update(0.05);
+    const initialDestIP = orchestrator.particles[0]?.destinationIP;
+    expect(initialDestIP).toBe(CONSTANTS.VICTIM_PUBLIC_IP);
+    
+    // Clear particles
+    orchestrator.particles = [];
+    
+    // Enable proxy
+    orchestrator.server.setReverseProxyEnabled(true);
+    
+    // Spawn new packets
+    orchestrator.update(0.05);
+    
+    // New packets should have proxy public IP as destination
+    expect(orchestrator.particles.length).toBeGreaterThan(0);
+    orchestrator.particles.forEach(packet => {
+      expect(packet.destinationIP).toBe(CONSTANTS.PROXY_PUBLIC_IP);
+    });
+  });
+
+  // v1.2 Tests: Proxy routing logic
+  it('should reject packets with wrong destination IP when proxy is enabled', () => {
+    orchestrator.server.setReverseProxyEnabled(true);
+    orchestrator.attacker.isAttacking = true;
+    orchestrator.attacker.deviceCount = 5;
+    orchestrator.attacker.targetIP = '203.0.113.10'; // Wrong IP (origin, not proxy)
+    
+    orchestrator.update(0.1); // Spawn attack packets
+    expect(orchestrator.particles.length).toBeGreaterThan(0);
+    
+    // Move packets to arrival point
+    orchestrator.particles.forEach(p => p.x = CONSTANTS.CANVAS_WIDTH);
+    
+    orchestrator.update(0.01); // Process arrivals
+    
+    // Packets should be rejected (MISSED)
+    expect(orchestrator.analyzerLogs.some(log => log.action === 'MISSED' && log.reason === 'WRONG_IP')).toBe(true);
+  });
+
+  it('should forward packets with correct destination IP through proxy', () => {
+    orchestrator.server.setReverseProxyEnabled(true);
+    orchestrator.attacker.isAttacking = true;
+    orchestrator.attacker.deviceCount = 5;
+    orchestrator.attacker.targetIP = CONSTANTS.PROXY_PUBLIC_IP; // Correct proxy IP
+    
+    orchestrator.update(0.1); // Spawn attack packets
+    const originalSourceIPs = orchestrator.particles.map(p => p.sourceIP);
+    
+    // Move packets to arrival point
+    orchestrator.particles.forEach(p => p.x = CONSTANTS.CANVAS_WIDTH);
+    
+    orchestrator.update(0.01); // Process arrivals
+    
+    // Check analyzer logs for forwarded packets
+    const allowedLogs = orchestrator.analyzerLogs.filter(log => log.action === 'ALLOWED' || log.action === 'DROPPED');
+    
+    // At least some packets should have been processed (not all rejected)
+    expect(allowedLogs.length).toBeGreaterThan(0);
+  });
+
+  it('should preserve client IP and rewrite source IP when forwarding through proxy', () => {
+    orchestrator.server.setReverseProxyEnabled(true);
+    orchestrator.isSimulationRunning = true;
+    
+    orchestrator.update(0.1); // Spawn genuine packets
+    const originalSourceIP = orchestrator.particles[0].sourceIP;
+    
+    // Manually process one packet to check IP rewriting
+    const particle = orchestrator.particles[0];
+    particle.x = CONSTANTS.CANVAS_WIDTH; // Move to arrival
+    particle.destinationIP = CONSTANTS.PROXY_PUBLIC_IP; // Ensure correct destination
+    
+    // Before processing, particle has no clientIP (null by default)
+    expect(particle.clientIP).toBeNull();
+    
+    orchestrator.processArrival(particle);
+    
+    // After processing through proxy, clientIP should be preserved and sourceIP rewritten
+    expect(particle.clientIP).toBe(originalSourceIP);
+    expect(particle.sourceIP).toMatch(/^198\.51\.100\.\d+$/); // Proxy egress IP pattern
+    expect(particle.sourceIP).not.toBe(originalSourceIP); // Source IP was rewritten
+    expect(particle.isForwarded).toBe(true); // Marked as forwarded
+  });
+
+  it('should process packets normally when proxy is disabled', () => {
+    orchestrator.server.setReverseProxyEnabled(false);
+    orchestrator.isSimulationRunning = true;
+    
+    orchestrator.update(0.1); // Spawn genuine packets
+    
+    // Move packets to arrival point
+    orchestrator.particles.forEach(p => p.x = CONSTANTS.CANVAS_WIDTH);
+    
+    const initialSourceIPs = orchestrator.particles.map(p => p.sourceIP);
+    
+    orchestrator.update(0.01); // Process arrivals
+    
+    // Without proxy, packets should be processed without IP rewriting
+    // Check logs to ensure packets were processed
+    const logs = orchestrator.analyzerLogs;
+    expect(logs.length).toBeGreaterThan(0);
+    
+    // IPs in logs should match original source IPs (no proxy rewriting)
+    const logIPs = logs.map(log => log.ip);
+    expect(logIPs.some(ip => initialSourceIPs.includes(ip))).toBe(true);
+  });
+
+  it('should reject packets targeting origin IP when proxy is enabled', () => {
+    orchestrator.server.setReverseProxyEnabled(true);
+    orchestrator.isSimulationRunning = true;
+    
+    // Manually create a packet targeting the origin IP instead of proxy
+    orchestrator.update(0.05);
+    orchestrator.particles.forEach(p => {
+      p.destinationIP = CONSTANTS.VICTIM_ORIGIN_IP; // Wrong - targeting origin directly
+      p.x = CONSTANTS.CANVAS_WIDTH; // Move to arrival
+    });
+    
+    orchestrator.update(0.01); // Process arrivals
+    
+    // All packets should be rejected with MISSED/WRONG_IP
+    expect(orchestrator.analyzerLogs.every(log => log.action === 'MISSED' && log.reason === 'WRONG_IP')).toBe(true);
+  });
 });

@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Set a site-wide root font size so rem-based typography scales proportionally.
+   Change the percentage or use a pixel value if you want a different global scale. */
+@layer base {
+  html {
+    /* 87.5% of 16px = 14px (smaller, proportional scaling for rem units) */
+    font-size: 87.5%;
+  }
+}
+

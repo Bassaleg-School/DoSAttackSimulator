@@ -24,8 +24,16 @@ export const PROTOCOLS = {
 };
 
 export const CONSTANTS = {
-  // Victim
-  VICTIM_IP: '203.0.113.10',
+  // Victim / Addressing (v1.2)
+  VICTIM_ORIGIN_IP: '203.0.113.10', // fixed origin server IP
+  VICTIM_PUBLIC_IP: '203.0.113.10', // default public IP (same as origin when no proxy); server.publicIP changes to PROXY_PUBLIC_IP when proxy is enabled
+  VICTIM_IP: '203.0.113.10', // Legacy - kept for backward compatibility
+
+  // Reverse Proxy / DDoS Protection (v1.2)
+  REVERSE_PROXY_ENABLED: false,
+  PROXY_PUBLIC_IP: '198.51.100.20', // proxy front-door IP
+  PROXY_EGRESS_IP_PREFIX: '198.51.100', // origin sees traffic from this network when proxy enabled
+  COLOR_FORWARDED: '#22D3EE', // cyan (Tailwind cyan-400): packets forwarded proxy → origin
 
   // Traffic Generation
   GENUINE_USER_COUNT: 50,
@@ -43,7 +51,7 @@ export const CONSTANTS = {
 
   // Device Count Range
   DEVICE_COUNT_MIN: 1,
-  DEVICE_COUNT_MAX: 500,
+  DEVICE_COUNT_MAX: 1000,
 
   // Server Thresholds
   SERVER_DEGRADED_THRESHOLD: 90,
