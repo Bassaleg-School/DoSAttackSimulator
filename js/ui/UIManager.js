@@ -179,8 +179,8 @@ export default class UIManager {
     this.elements.analyzerLogs.innerHTML = '';
     const fragment = document.createDocumentFragment();
     
-    // Show last 20 logs
-    logs.slice(0, 20).forEach(log => {
+    // Show last N logs
+    logs.slice(0, CONSTANTS.UI_LOG_DISPLAY_LIMIT_ANALYZER).forEach(log => {
       const div = document.createElement('div');
       const colorClass = log.action === 'BLOCKED' || log.action === 'DROPPED' ? 'text-red-400' : 'text-emerald-400';
       div.className = colorClass;
