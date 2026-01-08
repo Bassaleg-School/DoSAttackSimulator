@@ -51,18 +51,16 @@ Status:
 Tests:
 - Range count matches ceil(devices/20) and excludes genuine subnet; base rates mapped by attack type; desired vs visual PPS with trafficWeight verification; accumulator honors fractional dt.
 
-### 5) Server Model
+### 5) Server Model ✅
 Deliverables:
 - State: bandwidthUsage, cpuLoad, activeConnections (with TTL), happinessScore, droppedPackets, status (ONLINE/DEGRADED/CRASHED).
-- `receive(packet)`: volume attacks raise bandwidth; SYN adds connection, raises CPU; HTTP_GET succeeds unless load ≥99 (then timeout and drop legit).
-- `update(dt)`: decay bandwidth (10%/s) and cpu (2%/s), expire SYN connections per TTL, recompute status thresholds (90/99 with recovery below 90), update happiness = 100 - dropped×2 clamped.
+- `receive(packet)`: volume attacks raise bandwidth; SYN adds connection and CPU; HTTP_GET succeeds unless load ≥99/crashed, then drop legit.
+- `update(dt)`: decay bandwidth (10%/s) and CPU (2%/s), expire SYN connections per TTL, recompute status thresholds (90/99 with recovery below 90), update happiness = 100 - dropped×2 clamped.
 - Crash halts processing but auto-recovers when below recovery threshold.
+Status:
+- Implemented load tracking, TTL-based half-open connections, decay, crash gating, and happiness clamping.
 Tests:
-- Volume packet increases bandwidth; decays with dt.
-- SYN adds connection, cpu rises; TTL expiry reduces counts/load.
-- Status transitions: <90 online, 90-<99 degraded, ≥99 crashed, recover <90.
-- HTTP_GET times out when crashed (drops increment happiness penalty).
-- Happiness clamps 0-100.
+- Volume increase/decay, SYN add+TTL expiry, status transitions (degraded/crashed/recover), HTTP_GET drop when crashed with happiness penalty validated.
 
 ### 6) Firewall Model
 Deliverables:
