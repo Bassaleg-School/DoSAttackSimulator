@@ -31,7 +31,7 @@
           <h2 class="text-lg font-semibold mb-3">Firewall & Mitigation</h2>
         </div>
         
-        <div id="firewall-dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="firewall-dashboard" class="grid grid-cols-4 gap-4">
             <!-- Col 1: Block Protocols -->
             <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                 <h4 class="text-xs font-semibold text-slate-400 mb-3">Block Protocols</h4>
@@ -98,7 +98,7 @@
             <!-- Col 3: Detected Subnets -->
             <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                 <h4 class="text-xs font-semibold text-slate-400 mb-3">Detected Subnets</h4>
-                <div id="ip-blacklist" class="text-xs font-mono text-slate-400 h-48 overflow-y-auto space-y-1 bg-slate-950/50 p-2 rounded border border-slate-800">
+                <div id="ip-blacklist" class="text-xs font-mono text-slate-400 max-h-48 overflow-y-auto space-y-1 bg-slate-950/50 p-2 rounded border border-slate-800">
                     <p class="text-slate-500">No traffic detected</p>
                 </div>
             </div>
@@ -106,7 +106,7 @@
             <!-- Col 4: Traffic Analyzer -->
             <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                  <h4 class="text-xs font-semibold text-slate-400 mb-3">Traffic Analyzer</h4>
-                 <div id="analyzer-logs" class="text-xs font-mono text-slate-400 bg-slate-950/50 border border-slate-800 rounded p-2 h-48 overflow-y-auto space-y-1">
+                 <div id="analyzer-logs" class="text-xs font-mono text-slate-400 bg-slate-950/50 border border-slate-800 rounded p-2 max-h-48 overflow-y-auto space-y-1">
                     <p class="text-slate-500">No traffic</p>
                  </div>
             </div>
