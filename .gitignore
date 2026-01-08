@@ -1,0 +1,49 @@
+# Node modules and logs
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime files
+.pids
+*.pid
+*.seed
+*.pid.lock
+node-repl-history
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/project files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.*.local
+
+# Build / cache / coverage
+/dist/
+build/
+.cache/
+coverage/
+coverage-final.json
+.parcel-cache/
+.vite/
+.next/
+out/
+
+# Tailwind / CSS build artifacts
+/css/*.map
+# NOTE: css/main.css is intentionally committed per project spec; keep it tracked
+!/css/main.css
+
+# Tooling caches
+.eslintcache
+/.turbo/
+/*.log

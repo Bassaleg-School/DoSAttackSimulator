@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DoS/DDoS Simulator</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.2em] text-emerald-300">DoS/DDoS Simulator</p>
+        <h1 class="text-xl font-semibold text-slate-50">Network Resilience Sandbox</h1>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <button class="px-4 py-2 rounded-md bg-emerald-600 text-white shadow">Start Simulation</button>
+        <button class="px-4 py-2 rounded-md bg-slate-800 text-slate-100 border border-slate-700">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-screen-2xl mx-auto px-6 py-6">
+    <div class="grid grid-cols-12 gap-4">
+      <section class="col-span-12 lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 min-h-[320px]">
+        <h2 class="text-lg font-semibold mb-2">Attacker</h2>
+        <p class="text-sm text-slate-300">Configure device count, attack type, and bandwidth.</p>
+        <div class="mt-4 space-y-3 text-slate-200 text-sm">
+          <div class="h-10 rounded bg-slate-800/60 border border-slate-700 flex items-center px-3">Device slider placeholder</div>
+          <div class="h-10 rounded bg-slate-800/60 border border-slate-700 flex items-center px-3">Attack type dropdown placeholder</div>
+          <div class="h-10 rounded bg-slate-800/60 border border-slate-700 flex items-center px-3">Bandwidth slider placeholder</div>
+        </div>
+      </section>
+
+      <section class="col-span-12 lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-4 min-h-[320px] flex flex-col gap-4">
+        <h2 class="text-lg font-semibold">Network Visualization</h2>
+        <div class="flex-1 rounded-lg border border-slate-800 bg-slate-950/60 flex items-center justify-center">
+          <p class="text-slate-400">Canvas placeholder (1000x400)</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm text-slate-200">
+          <div class="rounded bg-slate-800/60 border border-slate-700 p-3">Traffic Analyzer placeholder</div>
+          <div class="rounded bg-slate-800/60 border border-slate-700 p-3">Legend placeholder</div>
+        </div>
+      </section>
+
+      <section class="col-span-12 lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 min-h-[320px]">
+        <h2 class="text-lg font-semibold mb-2">Server</h2>
+        <p class="text-sm text-slate-300">Status, resource usage, and user happiness.</p>
+        <div class="mt-4 space-y-3 text-slate-200 text-sm">
+          <div class="h-10 rounded bg-slate-800/60 border border-slate-700 flex items-center px-3">Bandwidth bar placeholder</div>
+          <div class="h-10 rounded bg-slate-800/60 border border-slate-700 flex items-center px-3">CPU bar placeholder</div>
+          <div class="h-10 rounded bg-slate-800/60 border border-slate-700 flex items-center px-3">Happiness badge placeholder</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
