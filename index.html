@@ -32,82 +32,81 @@
         </div>
         
         <div id="firewall-dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Group 1: Blocking Rules -->
-            <div class="space-y-4">
-                <div>
-                    <h4 class="text-xs font-semibold text-slate-400 mb-2">Block Protocols</h4>
-                    <div class="space-y-2">
-                        <label class="flex items-center text-sm">
-                            <input type="checkbox" id="check-block-tcp" class="mr-2">
-                            <span>Block TCP</span>
-                            <span class="ml-auto text-xs text-amber-400">⚠ Blocks web</span>
-                        </label>
-                        <label class="flex items-center text-sm">
-                            <input type="checkbox" id="check-block-udp" class="mr-2">
-                            <span>Block UDP</span>
-                        </label>
-                        <label class="flex items-center text-sm">
-                            <input type="checkbox" id="check-block-icmp" class="mr-2">
-                            <span>Block ICMP</span>
-                        </label>
-                    </div>
-                </div>
-                <!-- IP Blacklist -->
-                <div>
-                    <h4 class="text-xs font-semibold text-slate-400 mb-2">Detected Subnets</h4>
-                    <div id="ip-blacklist" class="text-xs font-mono text-slate-400 max-h-32 overflow-y-auto space-y-1 bg-slate-950/50 p-2 rounded border border-slate-800">
-                        <p class="text-slate-500">No traffic detected</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Group 2: Rate Limiting -->
+            <!-- Col 1: Block Protocols -->
             <div>
-                 <h4 class="text-xs font-semibold text-slate-400 mb-2">Rate Limiting</h4>
-                 <div class="space-y-4">
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">Block Protocols</h4>
+                <div class="space-y-2">
                     <label class="flex items-center text-sm">
-                        <input type="checkbox" id="check-rate-limit" class="mr-2">
-                        <span>Enable Rate Limiting</span>
+                        <input type="checkbox" id="check-block-tcp" class="mr-2">
+                        <span>Block TCP</span>
+                        <span class="ml-auto text-xs text-amber-400">⚠ Blocks web</span>
                     </label>
-                    <div id="rate-limit-controls" class="hidden space-y-2 pl-4 border-l-2 border-slate-800">
-                        <label class="block text-xs text-slate-400">Threshold: <span id="rate-limit-value" class="text-emerald-400">20</span> req/s</label>
-                        <input type="range" id="slider-rate-limit" min="5" max="50" value="20" class="w-full">
-                        <label class="block text-xs text-slate-400 mt-2">Apply To:</label>
-                        <select id="dropdown-rate-limit-scope" class="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-100">
-                            <option value="ALL">All Protocols</option>
-                            <option value="TCP">TCP Only</option>
-                            <option value="UDP">UDP Only</option>
-                            <option value="ICMP">ICMP Only</option>
-                        </select>
-                    </div>
-                 </div>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" id="check-block-udp" class="mr-2">
+                        <span>Block UDP</span>
+                    </label>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" id="check-block-icmp" class="mr-2">
+                        <span>Block ICMP</span>
+                    </label>
+                </div>
             </div>
 
-            <!-- Group 3: Architecture Mitigations -->
-            <div>
-                <h4 class="text-xs font-semibold text-slate-400 mb-2">Infrastructure</h4>
-                <div class="space-y-4">
-                    <div>
+            <!-- Col 2: Rate Limiting & Infrastructure -->
+            <div class="space-y-6">
+                <!-- Rate Limiting -->
+                <div>
+                     <h4 class="text-xs font-semibold text-slate-400 mb-2">Rate Limiting</h4>
+                     <div class="space-y-2">
                         <label class="flex items-center text-sm">
+                            <input type="checkbox" id="check-rate-limit" class="mr-2">
+                            <span>Enable Rate Limiting</span>
+                        </label>
+                        <div id="rate-limit-controls" class="hidden space-y-2 pl-4 border-l-2 border-slate-800">
+                            <div class="flex items-center justify-between text-xs text-slate-400">
+                                <span>Threshold:</span>
+                                <span class="text-emerald-400"><span id="rate-limit-value">20</span> req/s</span>
+                            </div>
+                            <input type="range" id="slider-rate-limit" min="5" max="50" value="20" class="w-full">
+                            <label class="block text-xs text-slate-400 mt-1">Apply To:</label>
+                            <select id="dropdown-rate-limit-scope" class="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-100">
+                                <option value="ALL">All Protocols</option>
+                                <option value="TCP">TCP Only</option>
+                                <option value="UDP">UDP Only</option>
+                                <option value="ICMP">ICMP Only</option>
+                            </select>
+                        </div>
+                     </div>
+                </div>
+
+                <!-- Infrastructure -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 mb-2">Infrastructure</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center text-sm" title="Doubles bandwidth capacity">
                             <input type="checkbox" id="check-load-balancing" class="mr-2">
                             <span>Load Balancing</span>
                         </label>
-                        <p class="text-xs text-slate-500 ml-6 mt-1">Doubles bandwidth capacity</p>
-                    </div>
-                    <div>
-                        <label class="flex items-center text-sm">
+                        <label class="flex items-center text-sm" title="Hides IP, Filters traffic">
                             <input type="checkbox" id="check-reverse-proxy" class="mr-2">
-                            <span>Reverse Proxy Protection</span>
+                            <span>Reverse Proxy</span>
                         </label>
-                        <p class="text-xs text-slate-500 ml-6 mt-1">Hides Origin IP. Filters traffic at edge.</p>
                     </div>
                 </div>
             </div>
+
+            <!-- Col 3: Detected Subnets -->
+            <div>
+                <h4 class="text-xs font-semibold text-slate-400 mb-2">Detected Subnets</h4>
+                <div id="ip-blacklist" class="text-xs font-mono text-slate-400 h-48 overflow-y-auto space-y-1 bg-slate-950/50 p-2 rounded border border-slate-800">
+                    <p class="text-slate-500">No traffic detected</p>
+                </div>
+            </div>
             
-            <!-- Group 4: Traffic Analysis -->
+            <!-- Col 4: Traffic Analyzer -->
             <div>
                  <h4 class="text-xs font-semibold text-slate-400 mb-2">Traffic Analyzer</h4>
-                 <div id="analyzer-logs" class="text-xs font-mono text-slate-400 bg-slate-950/60 border border-slate-800 rounded p-2 h-40 overflow-y-auto space-y-1">
+                 <div id="analyzer-logs" class="text-xs font-mono text-slate-400 bg-slate-950/50 border border-slate-800 rounded p-2 h-48 overflow-y-auto space-y-1">
                     <p class="text-slate-500">No traffic</p>
                  </div>
             </div>
