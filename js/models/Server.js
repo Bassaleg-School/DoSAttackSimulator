@@ -11,7 +11,7 @@ export default class Server {
     this.happinessScore = 100;
     this.droppedPackets = 0;
     this.status = SERVER_STATUS.ONLINE;
-    this.bandwidthCapacityMultiplier = 1.0; // 1.0 = baseline, higher = more capacity
+    this.bandwidthCapacityMultiplier = 1; // 1.0 = baseline, higher = more capacity
   }
 
   getCurrentLoad() {

@@ -90,15 +90,16 @@ export default class EventHandlers {
         
         // Reset UI controls to defaults
         if (this.elements.sliderDeviceCount) this.elements.sliderDeviceCount.value = 1;
-        if (this.elements.sliderAttackBandwidth) this.elements.sliderAttackBandwidth.value = 1.0;
+        if (this.elements.sliderAttackBandwidth) this.elements.sliderAttackBandwidth.value = 1;
         if (this.elements.dropdownAttackType) this.elements.dropdownAttackType.value = 'UDP';
         if (this.elements.inputTargetIP) this.elements.inputTargetIP.value = '203.0.113.10';
+        if (this.elements.dropdownRateLimitScope) this.elements.dropdownRateLimitScope.value = 'ALL';
         if (this.elements.sliderServerCapacity) {
-          this.elements.sliderServerCapacity.value = 1.0;
+          this.elements.sliderServerCapacity.value = 1;
           const label = document.getElementById('server-capacity-value');
           if (label) label.textContent = '1.0x';
         }
-        this.uiManager.updateAttackerInfo(1, 1.0);
+        this.uiManager.updateAttackerInfo(1, 1);
       });
     }
   }

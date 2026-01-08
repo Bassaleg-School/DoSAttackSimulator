@@ -224,7 +224,7 @@ export default class UIManager {
     
     subnets.forEach(subnet => {
       const isBlocked = blockedIPs.has(subnet);
-      const checkboxId = `check-ip-${subnet.replace(/\./g, '-')}`;
+      const checkboxId = `check-ip-${subnet.replaceAll('.', '-')}`;
       
       const label = document.createElement('label');
       label.className = 'flex items-center';
@@ -233,7 +233,7 @@ export default class UIManager {
       input.type = 'checkbox';
       input.id = checkboxId;
       input.className = 'mr-2 subnet-checkbox';
-      input.setAttribute('data-subnet', subnet);
+      input.dataset.subnet = subnet;
       if (isBlocked) {
         input.checked = true;
       }
