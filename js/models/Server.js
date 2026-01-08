@@ -133,8 +133,7 @@ export default class Server {
   
   // v1.3: Record a dropped packet with TTL for happiness recovery (weighted)
   recordDroppedPacket(weight = 1) {
-    const dropWeight = weight || 1;
-    this.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS, weight: dropWeight });
+    this.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS, weight });
     this.updateHappiness();
   }
 
