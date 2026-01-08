@@ -59,6 +59,7 @@ npm test
 - **Performance-sensitive changes** (renderer, spawn rates, visual scaling) should include basic performance assertions (e.g., visual spawn rate caps, `trafficWeight` math) and be validated against the target FPS and active particle caps.
 
 ## Development Workflow & Advice
+- You **must** write tests for the expected outputs of any new functionality that you're going to implement.
 - Maintain the MVC split: keep DOM logic in `ui/`, engine/game-loop in `core/`, and business logic in `models/`.
 - When changing constants, update the `constants.js` excerpt in `SPEC.md` if the constant affects simulation behaviour or UI expectations.
 - If you touch Tailwind input files (`src/input.css`) or UI styles, run the CSS build (`npm run build:css`) and ensure `css/main.css` is updated when relevant.

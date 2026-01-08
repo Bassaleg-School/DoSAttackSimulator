@@ -6,19 +6,7 @@ export const DROPPED_PACKET_TTL_SECONDS = 10; // v1.1: dropped packets age out a
 
 export default class Server {
   constructor() {
-    this.bandwidthUsage = 0;
-    this.cpuLoad = 0;
-    this.activeConnections = [];
-    this.happinessScore = 100;
-    this.droppedPackets = 0; // Legacy counter for backward compatibility
-    this.droppedPacketEvents = []; // v1.1: time-windowed tracking for happiness recovery
-    this.status = SERVER_STATUS.ONLINE;
-    this.bandwidthCapacityMultiplier = 1; // 1.0 = baseline, higher = more capacity
-    
-    // v1.2: Reverse Proxy / IP addressing
-    this.originIP = CONSTANTS.VICTIM_ORIGIN_IP;
-    this.publicIP = CONSTANTS.VICTIM_PUBLIC_IP;
-    this.reverseProxyEnabled = CONSTANTS.REVERSE_PROXY_ENABLED;
+    this.reset();
   }
 
   getCurrentLoad() {
@@ -42,15 +30,15 @@ export default class Server {
   }
 
   updateHappiness() {
-    // v1.1: Calculate happiness based on active (non-expired) dropped packet events
-    const activeDroppedPackets = this.droppedPacketEvents.length;
+    // v1.3: Calculate happiness using weighted drops so aggregate badges align
+    const activeDroppedWeight = this.droppedPacketEvents.reduce((sum, drop) => sum + drop.weight, 0);
     this.happinessScore = clamp(
-      100 - activeDroppedPackets * CONSTANTS.HAPPINESS_PENALTY_PER_DROP,
+      100 - activeDroppedWeight * CONSTANTS.HAPPINESS_PENALTY_PER_DROP,
       0,
       100
     );
     // Keep legacy counter in sync for backward compatibility
-    this.droppedPackets = activeDroppedPackets;
+    this.droppedPackets = activeDroppedWeight;
   }
 
   receive(packet) {
@@ -60,7 +48,7 @@ export default class Server {
       const load = this.getCurrentLoad();
       if (this.status === SERVER_STATUS.CRASHED || load >= CONSTANTS.SERVER_CRASHED_THRESHOLD) {
         // v1.1: Track dropped packet with TTL for recovery
-        this.recordDroppedPacket();
+        this.recordDroppedPacket(weight);
         return { allowed: false, reason: 'CRASHED' };
       }
       return { allowed: true, reason: 'OK' };
@@ -73,7 +61,8 @@ export default class Server {
     } 
     // Protocol attacks (TCP SYN) target CPU/RAM - NOT affected by bandwidth capacity
     else if (packet.type === PACKET_TYPES.TCP_SYN) {
-      if (this.activeConnections.length < CONSTANTS.MAX_ACTIVE_CONNECTIONS) {
+      const activeWeight = this.getActiveConnectionWeight();
+      if (activeWeight + weight <= CONSTANTS.MAX_ACTIVE_CONNECTIONS) {
         this.activeConnections.push({ ttl: CONSTANTS.SYN_CONNECTION_TTL_SECONDS, weight });
         this.cpuLoad = clamp(this.cpuLoad + weight * LOAD_PER_PACKET, 0, 100);
       }
@@ -107,7 +96,7 @@ export default class Server {
     for (const drop of this.droppedPacketEvents) {
       const ttl = drop.ttl - dtSeconds;
       if (ttl > 0) {
-        remainingDrops.push({ ttl });
+        remainingDrops.push({ ttl, weight: drop.weight });
       }
     }
     this.droppedPacketEvents = remainingDrops;
@@ -142,9 +131,13 @@ export default class Server {
     }
   }
   
-  // v1.1: Record a dropped packet with TTL for happiness recovery
-  recordDroppedPacket() {
-    this.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS });
+  // v1.3: Record a dropped packet with TTL for happiness recovery (weighted)
+  recordDroppedPacket(weight = 1) {
+    this.droppedPacketEvents.push({ ttl: DROPPED_PACKET_TTL_SECONDS, weight });
     this.updateHappiness();
+  }
+
+  getActiveConnectionWeight() {
+    return this.activeConnections.reduce((sum, conn) => sum + conn.weight, 0);
   }
 }

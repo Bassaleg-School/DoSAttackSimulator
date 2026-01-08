@@ -1,8 +1,9 @@
 import { CONSTANTS } from '../constants.js';
 import GenuineTraffic from '../models/GenuineTraffic.js';
 import Attacker from '../models/Attacker.js';
-import Server, { DROPPED_PACKET_TTL_SECONDS } from '../models/Server.js';
+import Server from '../models/Server.js';
 import Firewall from '../models/Firewall.js';
+import { abbreviateNumber } from '../utils.js';
 
 export default class Orchestrator {
   constructor() {
@@ -14,6 +15,7 @@ export default class Orchestrator {
     this.analyzerLogs = [];
     this.analyzerLogBudget = 0;
     this.isSimulationRunning = false;
+    this.proxyBadgeMode = 'ip';
   }
 
   reset() {
@@ -24,6 +26,7 @@ export default class Orchestrator {
     this.particles = [];
     this.analyzerLogs = [];
     this.analyzerLogBudget = 0;
+    this.proxyBadgeMode = 'ip';
   }
 
   update(dt) {
@@ -75,58 +78,73 @@ export default class Orchestrator {
     const proxyX = pipeStartX + (CONSTANTS.PIPE_WIDTH * 0.85);
 
     for (const particle of this.particles) {
-      // Move particle
       particle.x += particle.speed * dt;
-      
-      let shouldRemove = false;
 
-      // v1.2: Proxy Inspection Point
-      if (this.server.reverseProxyEnabled && !particle.hasPassedProxy && particle.x >= proxyX) {
-        particle.hasPassedProxy = true;
-        this.runInspection(particle);
-        
-        if (particle.blockedByFirewall || particle.missedTarget) {
-          // Remove immediately (visual effect: disappear at proxy node)
-          shouldRemove = true;
-        }
+      if (this.processProxyCheckpoint(particle, proxyX)) {
+        continue;
       }
 
-      // Check if particle has reached the server
-      if (!shouldRemove && particle.x >= pipeEndX) {
-        // If not using proxy, inspect at server edge
-        if (!this.server.reverseProxyEnabled) {
-          this.runInspection(particle);
-        }
-
-        if (!particle.blockedByFirewall && !particle.missedTarget && !particle.droppedByCollision) {
-          this.processServerArrival(particle);
-        }
-        shouldRemove = true;
-      } 
-      
-      // Collision drop rule
-      if (!shouldRemove) {
-        if (!particle.isMalicious && !particle.blockedByFirewall && !particle.missedTarget && this.server.bandwidthUsage > CONSTANTS.BANDWIDTH_COLLISION_THRESHOLD) {
-          // Mark as dropped due to timeout (collision/congestion)
-          particle.droppedByCollision = true;
-          this.server.recordDroppedPacket();
-          this.logAnalyzerEvent({
-            ip: particle.sourceIP,
-            type: particle.type,
-            action: 'DROPPED',
-            reason: 'COLLISION'
-          });
-          // Keep particle for one more frame so users can see it turn black
-          remaining.push(particle);
-        } else if (particle.droppedByCollision) {
-          // Particle was marked as dropped in previous frame, now remove it
-        } else {
-          remaining.push(particle);
-        }
+      if (this.processServerEdge(particle, pipeEndX)) {
+        continue;
       }
+
+      if (this.handleCollision(particle, remaining)) {
+        continue;
+      }
+
+      remaining.push(particle);
     }
 
     this.particles = remaining;
+  }
+
+  processProxyCheckpoint(particle, proxyX) {
+    if (!this.server.reverseProxyEnabled || particle.hasPassedProxy || particle.x < proxyX) {
+      return false;
+    }
+
+    particle.hasPassedProxy = true;
+    this.runInspection(particle);
+    return particle.blockedByFirewall || particle.missedTarget;
+  }
+
+  processServerEdge(particle, pipeEndX) {
+    if (particle.x < pipeEndX) {
+      return false;
+    }
+
+    if (!this.server.reverseProxyEnabled) {
+      this.runInspection(particle);
+    }
+
+    if (!particle.blockedByFirewall && !particle.missedTarget && !particle.droppedByCollision) {
+      this.processServerArrival(particle);
+    }
+
+    return true;
+  }
+
+  handleCollision(particle, remaining) {
+    const shouldDropLegit = !particle.isMalicious
+      && !particle.blockedByFirewall
+      && !particle.missedTarget
+      && this.server.bandwidthUsage > CONSTANTS.BANDWIDTH_COLLISION_THRESHOLD;
+
+    if (shouldDropLegit) {
+      particle.droppedByCollision = true;
+      this.server.recordDroppedPacket(particle.trafficWeight || 1);
+      this.logAnalyzerEvent({
+        ip: particle.sourceIP,
+        type: particle.type,
+        action: 'DROPPED',
+        reason: 'COLLISION',
+        weight: particle.trafficWeight
+      });
+      remaining.push(particle);
+      return true;
+    }
+
+    return particle.droppedByCollision;
   }
 
   // Exposed for tests: process a single packet arrival through proxy + server path
@@ -174,7 +192,8 @@ export default class Orchestrator {
         ip: particle.sourceIP,
         type: particle.type,
         action: 'MISSED',
-        reason: 'WRONG_IP'
+        reason: 'WRONG_IP',
+        weight: particle.trafficWeight
       });
       return;
     }
@@ -189,82 +208,59 @@ export default class Orchestrator {
         ip: particle.clientIP || particle.sourceIP,
         type: particle.type,
         action: 'BLOCKED',
-        reason: firewallResult.reason
+        reason: firewallResult.reason,
+        weight: particle.trafficWeight
       });
       
       // If legitimate packet was blocked, count as dropped
       if (!particle.isMalicious) {
-        this.server.recordDroppedPacket();
+        this.server.recordDroppedPacket(particle.trafficWeight || 1);
       }
-      return;
     }
   }
 
   processServerArrival(particle) {
-    // Server processing (if not crashed)
-    if (this.server.status !== 'CRASHED') {
-      const serverResult = this.server.receive(particle);
-      
-      if (serverResult.allowed) {
-        this.logAnalyzerEvent({
-          ip: particle.clientIP || particle.sourceIP,
-          type: particle.type,
-          action: 'ALLOWED',
-          reason: serverResult.reason
-        });
-      } else {
-        this.logAnalyzerEvent({
-          ip: particle.clientIP || particle.sourceIP,
-          type: particle.type,
-          action: 'DROPPED',
-          reason: serverResult.reason
-        });
-      }
-    } else {
-      // Crash short-circuit: server crashed, all packets are dropped
+    if (this.server.status === 'CRASHED') {
       if (!particle.isMalicious) {
-        this.server.recordDroppedPacket();
+        this.server.recordDroppedPacket(particle.trafficWeight || 1);
       }
       this.logAnalyzerEvent({
         ip: particle.clientIP || particle.sourceIP,
         type: particle.type,
         action: 'DROPPED',
-        reason: 'SERVER_CRASHED'
+        reason: 'SERVER_CRASHED',
+        weight: particle.trafficWeight
+      });
+    } else {
+      const serverResult = this.server.receive(particle);
+      const action = serverResult.allowed ? 'ALLOWED' : 'DROPPED';
+
+      this.logAnalyzerEvent({
+        ip: particle.clientIP || particle.sourceIP,
+        type: particle.type,
+        action,
+        reason: serverResult.reason,
+        weight: particle.trafficWeight
       });
     }
   }
 
   logAnalyzerEvent(event) {
-    // Prioritize blocked/dropped events over allowed
-    const isHighPriority = event.action === 'BLOCKED' || event.action === 'DROPPED';
-    
-    if (isHighPriority) {
-      // Always log high priority events if we have any budget
-      if (this.analyzerLogBudget >= 1) {
-        this.analyzerLogs.unshift({
-          ...event,
-          timestamp: Date.now()
-        });
-        this.analyzerLogBudget -= 1;
-      }
-    } else {
-      // Sample allowed events within remaining budget
-      if (this.analyzerLogBudget >= 1) {
-        this.analyzerLogs.unshift({
-          ...event,
-          timestamp: Date.now()
-        });
-        this.analyzerLogBudget -= 1;
-      }
-    }
+    if (this.analyzerLogBudget < 1) return;
 
-    // Keep only last 50 entries
+    this.analyzerLogs.unshift({
+      ...event,
+      timestamp: Date.now()
+    });
+    this.analyzerLogBudget -= 1;
+
     if (this.analyzerLogs.length > CONSTANTS.UI_LOG_MAX_ENTRIES) {
       this.analyzerLogs = this.analyzerLogs.slice(0, CONSTANTS.UI_LOG_MAX_ENTRIES);
     }
   }
 
   getState() {
+    const aggregates = this.computeAggregates();
     return {
       server: {
         bandwidthUsage: this.server.bandwidthUsage,
@@ -272,7 +268,11 @@ export default class Orchestrator {
         status: this.server.status,
         happinessScore: this.server.happinessScore,
         droppedPackets: this.server.droppedPackets,
-        activeConnections: this.server.activeConnections.length
+        activeConnections: this.server.activeConnections.length,
+        activeConnectionWeight: this.server.getActiveConnectionWeight(),
+        publicIP: this.server.publicIP,
+        originIP: this.server.originIP,
+        reverseProxyEnabled: this.server.reverseProxyEnabled
       },
       attacker: {
         deviceCount: this.attacker.deviceCount,
@@ -290,7 +290,50 @@ export default class Orchestrator {
       },
       particles: this.particles,
       analyzerLogs: this.analyzerLogs,
-      isSimulationRunning: this.isSimulationRunning
+      isSimulationRunning: this.isSimulationRunning,
+      aggregates,
+      networkNodes: {
+        attackerCount: this.attacker.deviceCount,
+        legitUserCount: CONSTANTS.GENUINE_USER_COUNT,
+        proxy: {
+          enabled: this.server.reverseProxyEnabled,
+          publicIP: this.server.publicIP,
+          badgeMode: this.proxyBadgeMode,
+          trafficLabel: abbreviateNumber(aggregates.activeWeighted)
+        },
+        origin: {
+          ip: this.server.originIP,
+          status: this.server.status
+        }
+      }
     };
+  }
+
+  computeAggregates() {
+    const aggregates = {
+      activeWeighted: 0,
+      activeLegitWeighted: 0,
+      activeMaliciousWeighted: 0,
+      activeByType: {},
+      halfOpenWeighted: this.server.getActiveConnectionWeight()
+    };
+
+    for (const particle of this.particles) {
+      const weight = particle.trafficWeight || 1;
+      aggregates.activeWeighted += weight;
+      const typeKey = particle.type;
+      aggregates.activeByType[typeKey] = (aggregates.activeByType[typeKey] || 0) + weight;
+      if (particle.isMalicious) {
+        aggregates.activeMaliciousWeighted += weight;
+      } else {
+        aggregates.activeLegitWeighted += weight;
+      }
+    }
+
+    return aggregates;
+  }
+
+  setProxyBadgeMode(mode) {
+    this.proxyBadgeMode = mode === 'count' ? 'count' : 'ip';
   }
 }

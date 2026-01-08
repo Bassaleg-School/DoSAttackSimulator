@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import Server, { DROPPED_PACKET_TTL_SECONDS } from '../../js/models/Server.js';
+import Server from '../../js/models/Server.js';
 import { PACKET_TYPES, SERVER_STATUS, CONSTANTS } from '../../js/constants.js';
 
 describe('Server', () => {
@@ -40,10 +40,10 @@ describe('Server', () => {
     const server = new Server();
     server.bandwidthUsage = 100;
     server.update(0);
-    const result = server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+    const result = server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: CONSTANTS.PACKET_VISUAL_SCALE });
     expect(result.allowed).toBe(false);
-    expect(server.droppedPackets).toBe(1);
-    expect(server.happinessScore).toBe(100 - CONSTANTS.HAPPINESS_PENALTY_PER_DROP);
+    expect(server.droppedPackets).toBe(CONSTANTS.PACKET_VISUAL_SCALE);
+    expect(server.happinessScore).toBe(0);
   });
 
   // v1.1 Tests: Happiness Recovery
@@ -54,10 +54,10 @@ describe('Server', () => {
     server.bandwidthUsage = 100;
     server.update(0);
     for (let i = 0; i < 10; i++) {
-      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: CONSTANTS.PACKET_VISUAL_SCALE });
     }
-    expect(server.droppedPackets).toBe(10);
-    expect(server.happinessScore).toBe(100 - 10 * CONSTANTS.HAPPINESS_PENALTY_PER_DROP);
+    expect(server.droppedPackets).toBe(10 * CONSTANTS.PACKET_VISUAL_SCALE);
+    expect(server.happinessScore).toBe(0);
     const initialHappiness = server.happinessScore;
     
     // Server recovers (load drops)
@@ -84,7 +84,7 @@ describe('Server', () => {
     server.bandwidthUsage = 100;
     server.update(0);
     for (let i = 0; i < 5; i++) {
-      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: CONSTANTS.PACKET_VISUAL_SCALE });
     }
     const initialHappiness = server.happinessScore;
     
@@ -107,7 +107,7 @@ describe('Server', () => {
     server.bandwidthUsage = 100;
     server.update(0);
     for (let i = 0; i < 60; i++) {
-      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: 1 });
+      server.receive({ type: PACKET_TYPES.HTTP_GET, trafficWeight: CONSTANTS.PACKET_VISUAL_SCALE });
     }
     expect(server.happinessScore).toBe(0);
     

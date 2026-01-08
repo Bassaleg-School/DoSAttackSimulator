@@ -203,6 +203,33 @@ describe('Orchestrator', () => {
     expect(state.isSimulationRunning).toBe(false);
   });
 
+  it('computes weighted aggregates and network node metadata', () => {
+    orchestrator.server.reverseProxyEnabled = true;
+    orchestrator.particles = [
+      { trafficWeight: 50, isMalicious: true, type: PACKET_TYPES.UDP },
+      { trafficWeight: 25, isMalicious: false, type: PACKET_TYPES.HTTP_GET }
+    ];
+
+    const state = orchestrator.getState();
+    const { aggregates, networkNodes } = state;
+
+    expect(aggregates.activeWeighted).toBe(75);
+    expect(aggregates.activeMaliciousWeighted).toBe(50);
+    expect(aggregates.activeLegitWeighted).toBe(25);
+    expect(aggregates.activeByType[PACKET_TYPES.UDP]).toBe(50);
+    expect(networkNodes.proxy.enabled).toBe(true);
+    expect(networkNodes.proxy.badgeMode).toBe('ip');
+    orchestrator.setProxyBadgeMode('count');
+    const toggled = orchestrator.getState().networkNodes.proxy;
+    expect(toggled.badgeMode).toBe('count');
+  });
+
+  it('logs analyzer entries with weights when budget allows', () => {
+    orchestrator.analyzerLogBudget = 5;
+    orchestrator.logAnalyzerEvent({ ip: '1.2.3.4', type: PACKET_TYPES.UDP, action: 'BLOCKED', reason: 'TEST', weight: 200 });
+    expect(orchestrator.analyzerLogs[0].weight).toBe(200);
+  });
+
   // v1.2 Tests: Destination IP assignment
   it('should assign server public IP to genuine packets', () => {
     orchestrator.isSimulationRunning = true;

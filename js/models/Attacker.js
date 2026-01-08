@@ -1,4 +1,4 @@
-import { ATTACK_TYPES, CONSTANTS, PACKET_TYPES } from '../constants.js';
+import { ATTACK_TYPES, CONSTANTS } from '../constants.js';
 import { generateRandomIP, extractSubnet, randomChoice } from '../utils.js';
 import Packet from './Packet.js';
 
@@ -82,7 +82,8 @@ export default class Attacker {
   spawnPackets(dtSeconds = 1) {
     const desiredPps = this.computeDesiredPps();
     const visualPps = Math.min(desiredPps, CONSTANTS.VISUAL_SPAWN_CAP_PER_SECOND);
-    const weight = visualPps === 0 ? 1 : desiredPps / visualPps;
+    const baseWeight = visualPps === 0 ? 1 : desiredPps / visualPps;
+    const weight = baseWeight * CONSTANTS.PACKET_VISUAL_SCALE;
     const desiredCount = visualPps * dtSeconds + this.accumulator;
     const count = Math.floor(desiredCount);
     this.accumulator = desiredCount - count;

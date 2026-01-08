@@ -38,6 +38,10 @@ describe('EventHandlers', () => {
           <input type="checkbox" id="check-rate-limit" />
           <input type="range" id="slider-rate-limit" value="20" />
           <div id="rate-limit-controls" class="hidden"></div>
+          <select id="select-proxy-badge">
+            <option value="ip">IP</option>
+            <option value="count">Count</option>
+          </select>
           <input type="checkbox" id="check-load-balancing" />
           <span id="device-count-value"></span>
           <span id="attack-bandwidth-value"></span>
@@ -49,7 +53,7 @@ describe('EventHandlers', () => {
       </html>
     `);
     
-    global.document = dom.window.document;
+    globalThis.document = dom.window.document;
     
     orchestrator = new Orchestrator();
     uiManager = new UIManager();
@@ -242,5 +246,16 @@ describe('EventHandlers', () => {
     eventHandlers.toggleAttackButtons(false);
     expect(btnStart.classList.contains('hidden')).toBe(false);
     expect(btnStop.classList.contains('hidden')).toBe(true);
+  });
+
+  it('should update proxy badge mode from display controls', () => {
+    orchestrator.setProxyBadgeMode = vi.fn();
+    eventHandlers.attachDisplayControls();
+
+    const select = dom.window.document.getElementById('select-proxy-badge');
+    select.value = 'count';
+    select.dispatchEvent(new dom.window.Event('change'));
+
+    expect(orchestrator.setProxyBadgeMode).toHaveBeenCalledWith('count');
   });
 });

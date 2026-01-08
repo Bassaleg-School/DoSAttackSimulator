@@ -1,4 +1,5 @@
 import { SERVER_STATUS, CONSTANTS } from '../constants.js';
+import { abbreviateNumber } from '../utils.js';
 
 export default class UIManager {
   constructor() {
@@ -26,6 +27,7 @@ export default class UIManager {
       // Network stats
       statActivePackets: document.getElementById('stat-active-packets'),
       statBandwidth: document.getElementById('stat-bandwidth'),
+      activeHalfOpen: document.getElementById('stat-active-halfopen'),
       
       // Attacker info
       deviceCountValue: document.getElementById('device-count-value'),
@@ -184,19 +186,23 @@ export default class UIManager {
       const div = document.createElement('div');
       const colorClass = log.action === 'BLOCKED' || log.action === 'DROPPED' ? 'text-red-400' : 'text-emerald-400';
       div.className = colorClass;
-      div.textContent = `${log.ip} ${log.type} ${log.action}`;
+      const weightSuffix = log.weight ? ` ${CONSTANTS.PACKET_VISUAL_SCALE_LABEL}${Math.round(log.weight)}` : '';
+      div.textContent = `${log.ip} ${log.type} ${log.action}${weightSuffix}`;
       fragment.appendChild(div);
     });
     
     this.elements.analyzerLogs.appendChild(fragment);
   }
 
-  updateNetworkStats(activePackets, bandwidth) {
+  updateNetworkStats(activePackets, bandwidth, halfOpen = 0) {
     if (this.elements.statActivePackets) {
-      this.elements.statActivePackets.textContent = activePackets;
+      this.elements.statActivePackets.textContent = abbreviateNumber(activePackets);
     }
     if (this.elements.statBandwidth) {
       this.elements.statBandwidth.textContent = `${Math.round(bandwidth)}%`;
+    }
+    if (this.elements.activeHalfOpen) {
+      this.elements.activeHalfOpen.textContent = abbreviateNumber(halfOpen);
     }
   }
 
@@ -333,6 +339,10 @@ export default class UIManager {
     this.updateResourceBars(state.server.bandwidthUsage, state.server.cpuLoad);
     this.updateHappiness(state.server.happinessScore);
     this.updateAnalyzerLogs(state.analyzerLogs);
-    this.updateNetworkStats(state.particles.length, state.server.bandwidthUsage);
+    this.updateNetworkStats(
+      state.aggregates?.activeWeighted || state.particles.length,
+      state.server.bandwidthUsage,
+      state.server.activeConnectionWeight || 0
+    );
   }
 }

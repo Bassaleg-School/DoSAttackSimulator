@@ -8,6 +8,41 @@ export default class CanvasRenderer {
     this.canvas.height = CONSTANTS.CANVAS_HEIGHT;
   }
 
+  drawBadgeNode({ x, y, label, sublabel, color }) {
+    const ctx = this.ctx;
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.arc(x, y, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y - 4);
+
+    if (sublabel) {
+      ctx.font = '10px monospace';
+      ctx.fillText(sublabel, x, y + 10);
+    }
+  }
+
+  drawConnection({ fromX, fromY, toX, toY, active }) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = active ? '#22c55e' : '#475569';
+    ctx.lineWidth = active ? 3 : 2;
+    ctx.setLineDash(active ? [] : [6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   clear() {
     this.ctx.fillStyle = '#0f172a'; // slate-950
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -173,6 +208,8 @@ export default class CanvasRenderer {
     
     const load = Math.max(state.server.bandwidthUsage, state.server.cpuLoad);
     this.drawPipes(load, state.firewall.loadBalancingEnabled, state.server.reverseProxyEnabled);
+
+    this.drawNetworkNodes(state);
     
     // Draw particles
     for (const particle of state.particles) {
@@ -194,7 +231,7 @@ export default class CanvasRenderer {
       { 
         shape: 'circle', 
         color: CONSTANTS.COLOR_LEGITIMATE, 
-        label: 'Legitimate HTTP Traffic' 
+        label: `Legitimate HTTP Traffic (${CONSTANTS.PACKET_VISUAL_SCALE_LABEL}${CONSTANTS.PACKET_VISUAL_SCALE} each)` 
       },
       { 
         shape: 'square', 
@@ -217,5 +254,45 @@ export default class CanvasRenderer {
         label: 'Active Half-Open Connection (shown on server)' 
       }
     ];
+  }
+
+  drawNetworkNodes(state) {
+    if (!state.networkNodes) return;
+    const { attackerCount, legitUserCount, proxy, origin } = state.networkNodes || {};
+    const centerY = this.canvas.height / 2;
+    const leftX = 80;
+    const midX = (this.canvas.width - CONSTANTS.PIPE_WIDTH) / 2;
+    const proxyX = midX + (CONSTANTS.PIPE_WIDTH * 0.85);
+    const rightX = this.canvas.width - 80;
+
+    const attackerLabel = attackerCount != null ? `${attackerCount}` : '';
+    const legitLabel = legitUserCount != null ? `${legitUserCount}` : '';
+
+    // Connections
+    if (proxy?.enabled) {
+      this.drawConnection({ fromX: leftX, fromY: centerY - 60, toX: proxyX, toY: centerY, active: true });
+      this.drawConnection({ fromX: leftX, fromY: centerY + 60, toX: proxyX, toY: centerY, active: true });
+      this.drawConnection({ fromX: proxyX, fromY: centerY, toX: rightX, toY: centerY, active: origin?.status !== 'CRASHED' });
+    } else {
+      this.drawConnection({ fromX: leftX, fromY: centerY - 60, toX: rightX, toY: centerY, active: origin?.status !== 'CRASHED' });
+      this.drawConnection({ fromX: leftX, fromY: centerY + 60, toX: rightX, toY: centerY, active: origin?.status !== 'CRASHED' });
+    }
+
+    // Attacker / Legit badges
+    this.drawBadgeNode({ x: leftX, y: centerY - 60, label: 'ATT', sublabel: attackerLabel, color: '#ef4444' });
+    this.drawBadgeNode({ x: leftX, y: centerY + 60, label: 'LEG', sublabel: legitLabel, color: '#22c55e' });
+
+    // Proxy badge
+    if (proxy?.enabled) {
+      const proxyLabel = proxy.badgeMode === 'count' ? proxy.trafficLabel : 'PROXY';
+      const proxySublabel = proxy.badgeMode === 'count' ? 'active' : proxy.publicIP;
+      this.drawBadgeNode({ x: proxyX, y: centerY, label: proxyLabel, sublabel: proxySublabel, color: '#38bdf8' });
+    }
+
+    // Origin badge
+    const originLabel = origin?.status === 'CRASHED' ? 'DOWN' : 'ORIG';
+    const originSublabel = origin?.ip;
+    const originColor = origin?.status === 'CRASHED' ? '#f97316' : '#22d3ee';
+    this.drawBadgeNode({ x: rightX, y: centerY, label: originLabel, sublabel: originSublabel, color: originColor });
   }
 }
