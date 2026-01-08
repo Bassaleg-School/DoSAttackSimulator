@@ -2,6 +2,10 @@
 
 All notable changes to the specification are documented in this file.
 
+## [1.3.0] - 2026-01-08
+- Clarify that the attacker device-count slider describes a strict 1-1000 range so the UI guidance now matches the control limits documented elsewhere in `SPEC.md` and `constants.js`.
+- Split the UDP/ICMP legend into separate colour callouts, ensuring ICMP flood packets are always described as orange squares per the v1.3 visual alignment notes.
+
 ## [1.2.0] - 2026-01-08
 - Add **Reverse Proxy / DDoS Protection** mitigation to `SPEC.md`: models Public IP (proxy) vs Origin IP, origin shielding, and proxy egress addressing.
 - Add visualization and canvas behaviour for the proxy node (proxy checkpoint at `proxyX`) and cyan-coloured forwarded packets to distinguish proxy→origin traffic.

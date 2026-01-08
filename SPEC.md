@@ -1,10 +1,10 @@
 # **Functional Specification: Interactive DoS/DDoS Attack Simulator**
 
 ---
-Spec-Version: 1.2.0
+Spec-Version: 1.3.0
 Last-Updated: 2026-01-08
 Changelog: CHANGELOG.md
-Summary: Adds Reverse Proxy mitigation (public IP vs origin IP); clarifies Target IP behaviour
+Summary: Adds packet visual scaling, network node badges (attackers/legit/proxy/origin), and aligns metrics with aggregate badge counts
 ---
 
 ## **1\. Pedagogical Overview & Curriculum Links**
@@ -28,8 +28,8 @@ The screen is divided into three distinct columns to represent the flow of data.
 
 ### **A. Left Panel: The Attacker (The Threat Actor)**
 
-* **Device Count Control (Slider):**  
-  * **Range:** 1 (DoS) to 1,000+ (DDoS).  
+  * **Device Count Control (Slider):**  
+    * **Range:** 1-1000 devices (DoS → DDoS scaling).  
   * **Visual Change:** Icon changes from a single hooded figure to a global network map as the number increases.  
 * **Target Selection:**  
   * Input field for IP Address (defaults to the Victim **Public IP**).
@@ -45,15 +45,18 @@ The screen is divided into three distinct columns to represent the flow of data.
 ### **B. Middle Panel: The Network (The Visualisation)**
 
 * **The Pipe (Bandwidth):** A visual conduit connecting Left to Right.  
-* **Traffic Particles:**  
-  * **Green Circles (●):** Genuine Users (IP Range: 172.16.0.x). Move at steady pace.  
-  * **Red Squares (■):** UDP/ICMP Malicious Traffic (Volume attacks).  
-  * **Red Triangles (▲):** TCP SYN Malicious Traffic (Protocol attacks).  
-    * *Volume Attack:* Swarms of red squares physically blocking green circles.  
-    * *Protocol Attack:* Red triangles arrive and turn into "lock" icons (🔒) on the server, staying there.  
+  * **Traffic Particles:**
+    * **Green Circles (●):** Genuine Users (IP Range: 172.16.0.x). Move at steady pace.  
+    * **Red Squares (■):** UDP Malicious Traffic (Volume attacks).  
+    * **Orange Squares (■):** ICMP Malicious Traffic (Volume attacks).  
+    * **Red Triangles (▲):** TCP SYN Malicious Traffic (Protocol attacks).  
+      * *Volume Attack:* Swarms of red/orange squares physically blocking green circles.  
+      * *Protocol Attack:* Red triangles arrive and turn into "lock" icons (🔒) on the server, staying there.  
+* **Network Nodes (v1.3):** Show four glyphs on/around the canvas: **Attackers** (left cluster badge = malicious device count), **Legit Users** (left cluster badge = 50), **Proxy** (when enabled, badge = current Public IP), and **Origin Server** (right, status badge). Connect them with lines that glow for allowed flow and dim/pulse when blocked.  
 * **Particle Legend:** A static legend displayed below the canvas showing:  
   * ● Green Circle = Legitimate HTTP Traffic  
-  * ■ Red Square = UDP/ICMP Flood Packet  
+  * ■ Red Square = UDP Flood Packet  
+  * ■ Orange Square = ICMP Flood Packet  
   * ▲ Red Triangle = TCP SYN Packet  
   * 🔒 Lock Icon = Active Half-Open Connection
 
@@ -125,6 +128,7 @@ This mitigation represents placing a managed Reverse Proxy / DDoS scrubbing serv
   * The Victim Panel should display both:
     * **Public IP (what the internet sees)**
     * **Origin IP (server address)**
+  * **Node visual (v1.3):** The canvas shows a **Proxy** node between the attacker/legit clusters and the origin; lines animate in two hops (Internet → Proxy → Origin) to reinforce shielding and IP change.
 
 * **Traffic / filtering behaviour:**
   * The proxy performs **L3/L4 scrubbing**:
@@ -171,6 +175,7 @@ The Happiness Score represents how well legitimate users are being served:
   * **Formula:** `Happiness = 100 - (droppedPackets × 2)`, clamped to 0-100.  
   * Each dropped legitimate packet reduces happiness by 2%.  
 * **Recovery:** Happiness recalculates in real-time using the formula above. As the number of dropped legitimate packets decreases (for example after the attack is mitigated and genuine traffic is being successfully served), Happiness will gradually recover toward 100%, clamped to 0-100. Recovery will not occur while genuine users are still being blocked by firewall rules. The `Reset Simulation` button still immediately restores Happiness to 100%.  
+* **Aggregate drop counting (v1.3):** `droppedPackets` is incremented by the packet’s `trafficWeight` (which already includes `PACKET_VISUAL_SCALE`), so happiness aligns with the aggregate badge counts and not just the number of rendered particles.
 * **False Positive Penalty:** If the firewall blocks a genuine user (172.16.0.x range), it counts as a dropped packet.  
 
 ### **Packet Generation Rates**
@@ -402,6 +407,12 @@ HAPPINESS_PENALTY_PER_DROP: 2,
 // Botnet IP Generation
 DEVICES_PER_SUBNET: 20,
 
+// Packet Visual Scaling (v1.3)
+PACKET_VISUAL_SCALE: 100, // each rendered particle represents this many real packets
+PACKET_VISUAL_SCALE_MIN: 10,
+PACKET_VISUAL_SCALE_MAX: 1000,
+PACKET_VISUAL_SCALE_LABEL: "×", // prefix used in legend/logs (e.g., "×100")
+
 // SYN / Half-open connections
 SYN_CONNECTION_TTL_SECONDS: 15,
 MAX_ACTIVE_CONNECTIONS: 100,
@@ -486,7 +497,7 @@ Controls the generation of malicious packets.
 
 * Compute `desiredPps = deviceCount × baseRate × bandwidthMultiplier`.
 * Compute `visualPps = min(desiredPps, VISUAL_SPAWN_CAP_PER_SECOND)`.
-* Each spawned malicious packet carries `trafficWeight = desiredPps / visualPps` (≥ 1).
+* Each spawned malicious packet carries `trafficWeight = (desiredPps / visualPps) × PACKET_VISUAL_SCALE` (≥ 1) so that one rendered particle still accounts for multiple underlying packets.
 * The server load calculations use `trafficWeight` so that simulation behaviour remains consistent even when not all traffic is rendered.
 
 ### **3.3 GenuineTraffic.js**
@@ -495,7 +506,7 @@ Controls the generation of legitimate user packets.
 
 * **State:** userCount (fixed at 50), userIPs (Array: 172.16.0.1 - 172.16.0.50).  
 * **Method spawnPacket():** Returns a new HTTP_GET Packet from a random genuine user IP.  
-* **Logic:** Spawns 50 packets/second total (1 per user per second), evenly distributed.
+* **Logic:** Spawns 50 packets/second total (1 per user per second), evenly distributed. Each legitimate Packet carries `trafficWeight = PACKET_VISUAL_SCALE` so happiness/bandwidth metrics use the same aggregation as the attacker side.
 
 ### **3.4 Server.js**
 
@@ -521,6 +532,7 @@ Simulates the victim machine.
   * ONLINE: max load < 90%  
   * DEGRADED: max load ≥ 90% and < 99%  
   * CRASHED: max load ≥ 99% (temporarily stops processing). Auto-recovers once max load drops below 90%.
+* **Aggregate accounting (v1.3):** All load, drop, and happiness calculations use weighted packet counts (`trafficWeight`), so one rendered particle representing many packets still impacts metrics proportionally.
 
 **Clarification (v1 simplified load model):** Server load is intentionally approximate for pedagogy.
 
@@ -554,6 +566,7 @@ The mitigation engine.
 * **Protocol mapping:** Blocking **TCP** blocks both **HTTP_GET** (legitimate web traffic) and **TCP SYN** (attack traffic).
 * **Rate limit scope:** Rate limiting is only active when the Firewall dashboard is enabled/open in the UI, and can be configured to apply to **ALL** protocols or a selected subset (TCP/UDP/ICMP).
 * **Traffic Analyzer logging:** To avoid UI lockups, the analyzer logs at most `UI_ANALYZER_LOG_MAX_PER_SECOND` entries per second. (Prefer logging BLOCKED/DROPPED events; sample ALLOWED events if there is remaining budget.)
+* **Aggregate badges (v1.3):** Analyzer counters and any per-protocol tallies should use the same aggregate values shown in the attacker/legit badges (e.g., abbreviate 1,000 as 1k) so the numbers stay consistent across UI and metrics.
 
 ## **4\. The Visualisation Engine (Canvas)**
 
@@ -567,11 +580,14 @@ We will use the **HTML5 Canvas API** for the middle panel to ensure 60FPS perfor
 
 ### **Visual Elements**
 
+**Aggregate badge alignment (v1.3):** All numeric displays (bandwidth/CPU %, dropped counts, analyzer rows, legend captions) must use the same aggregate values shown on the attacker/legit badges (with 1k-style abbreviation) so visuals and metrics stay in sync.
+
 * **The "Pipe":** A rounded rectangle (800px × 80px) centered vertically, representing the bandwidth conduit.  
 * **Pipe Saturation Effect:** As bandwidth usage increases, the pipe's background colour transitions from light grey (0%) to red (100%).  
 * **Load Balancing Mode:** When enabled, render two parallel pipes (each 800px × 35px) with a 10px gap.
-* **Reverse Proxy Mode (v1.2):** When Reverse Proxy is enabled, render a small "Proxy" node inside the pipe, near the server end.
-  * Visually treat the pipe as two segments: **Public (Internet → Proxy)** then **Origin (Proxy → Server)**.
+* **Node Layout (v1.3):** Render four static glyphs: **Attackers** (left cluster badge = device count), **Legit Users** (left cluster badge = 50), **Proxy** (center when enabled, badge = current Public IP), **Origin Server** (right, badge = status + IP). Connect them with lines that pulse/glow for allowed flow and dim when blocked. Keep nodes static; animate line intensity only.
+* **Reverse Proxy Mode (v1.2 → v1.3):** When Reverse Proxy is enabled, show two hops (Internet → Proxy → Origin). The proxy glyph sits between the pipe segments and inherits the Public IP label. The origin segment only lights when traffic passes proxy checks.
+* **Firewall Glyph (v1.3):** Draw a distinct shield icon at the active inspection point (near the proxy when enabled; near the server when disabled). Blocked packets disappear at this glyph, and blocked edges briefly pulse red to make drops visually clear.
 
 ### **Particle Rendering**
 
@@ -587,6 +603,8 @@ Each packet type has distinct visual representation for accessibility:
 
 **Reverse Proxy forwarding visual rule (v1.2):** When a packet is forwarded from proxy → origin, it keeps its **shape** but is recoloured **cyan** (#22D3EE) while traversing the origin segment. This differentiates "public" traffic from "forwarded" traffic.
 
+**Packet visual scale (v1.3):** Display the current multiplier in the legend and tooltips (e.g., "UDP Flood Packet ■ ×100"). Each rendered particle represents `PACKET_VISUAL_SCALE` real packets; counters, logs, and badges use this aggregate value so visuals and metrics stay aligned.
+
 ### **Animation Loop**
 
 1. **Clear** canvas with background colour.  
@@ -597,7 +615,7 @@ Each packet type has distinct visual representation for accessibility:
      * If Reverse Proxy is **enabled**: inspection occurs at `proxyX` (just before the proxy node).
    * **At the inspection point:**
      * Trigger `Firewall.inspect(packet)`.
-     * If not allowed: the packet turns **grey** and quickly disappears at the inspection point.
+     * If not allowed: the packet turns **grey** and quickly disappears at the inspection point, fading at the **Firewall** shield glyph and briefly pulsing the adjacent line red.
      * If allowed and Reverse Proxy is enabled:
        * Mark the packet as **forwarded** (set `clientIP` to the original sender if not already present).
        * Set `sourceIP` to a proxy egress IP (from `PROXY_EGRESS_IP_PREFIX`) to simulate what the origin observes.
@@ -607,7 +625,7 @@ Each packet type has distinct visual representation for accessibility:
      * Allowed packets reaching the server trigger `Server.receive()`.
    * If bandwidth > 95%: Legitimate packets are dropped due to congestion (simplified). They turn **black** (timeout) and quickly disappear.
 4. **Draw** all active packets using appropriate shapes.  
-5. **Draw** the particle legend below the canvas.
+5. **Draw** the particle legend below the canvas, including the packet visual scale (×N) label.
 
 **Firewall block visual rule (v1):** If Firewall.inspect() returns not allowed, the packet turns **grey** and quickly disappears without reaching Server.receive().
 **Clarification (v1.2):** When Reverse Proxy is enabled, this grey "blocked" disappearance occurs at the **proxy node** (edge), not at the server.
@@ -680,14 +698,14 @@ A horizontal bar at the top with simulation controls:
 
 * The canvas is centered within the middle panel.
 * The legend is always visible directly below the canvas.
-* The middle panel also shows brief labels: "Network" and current congestion (e.g., "Bandwidth: 72%"), so students can connect visuals to metrics.
+* The middle panel also shows brief labels: "Network" and current congestion (e.g., "Bandwidth: 72%"), so students can connect visuals to metrics. Cluster badges for **Attackers** and **Legit Users** mirror the counts shown in the Attacker/Server panels and are used for all aggregate metrics.
 
 ### **Attacker Panel (Left)**
 
 * **Input:** Range Sliders for Device Count (1-1000) and Attack Bandwidth (0.5x-2x).  
 * **Dropdown:** Attack Type selector (UDP Flood, TCP SYN Flood, ICMP Flood).  
 * **Display:** Botnet IP ranges (read-only list showing generated subnets).  
-* **Feedback:** Dynamic text updating immediately (onInput event).
+* **Feedback:** Dynamic text updating immediately (onInput event). Device count badge (uses 1k-style abbreviation) mirrors the value on the canvas cluster and feeds into aggregate metrics/logs.
 
 ### **Victim Panel (Right)**
 
@@ -697,13 +715,12 @@ A horizontal bar at the top with simulation controls:
 * **Health Bars:** CSS width transition for smooth 60fps updates. Two bars: Bandwidth and CPU/RAM.  
 * **Status Indicator:** Large icon that changes colour (green/amber/red) based on server status.  
 * **Happiness Score:** Prominent percentage display with colour coding (green ≥80%, amber 50-79%, red <50%).  
+* **User/Device badges (v1.3):** Show a fixed **Legit Users: 50** badge and the current malicious device badge; these same aggregates appear in the canvas clusters, analyzer, and metric calculations to keep numbers consistent.
 * **Log Window:** A `<div>` with `overflow-y: scroll`. Use prepend() for new log entries, limiting DOM nodes to the last 50 entries to prevent memory leaks. Shows "User X... SUCCESS/TIMEOUT".
 
-### **Firewall Dashboard (Right Panel, Collapsible Section)**
+### **Firewall Dashboard (Top Row, 4-Card Grid)**
 
-* **Default state:** Collapsed on load to avoid overwhelming students.
-* **Toggle control:** A clearly labeled button (e.g., "Open Firewall & Analyzer") expands/collapses the section. The toggle remains visible at all times.
-
+* **Layout:** Four horizontal cards pinned at the top of the page: **Block Protocols**, **Rate Limiting / Infrastructure**, **Detected Subnets**, **Traffic Analyzer**. No collapsible section; all controls are always visible.
 * **Traffic Analyzer:** Scrolling log of recent packets with IP, Protocol, and Status (Allowed/Blocked).  
 * **Protocol Filters:** Three checkboxes (Block TCP, Block UDP, Block ICMP) with warning icon next to "Block TCP".  
 * **IP Blocklist:** Dynamic list of detected /24 subnets with toggle switches. Subnets appear as they're detected in traffic.  
