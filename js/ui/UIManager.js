@@ -23,6 +23,7 @@ export default class UIManager {
       // Attacker info
       deviceCountValue: document.getElementById('device-count-value'),
       attackBandwidthValue: document.getElementById('attack-bandwidth-value'),
+      attackerIcon: document.getElementById('attacker-icon'),
       botnetRanges: document.getElementById('botnet-ranges'),
       
       // Firewall
@@ -176,6 +177,23 @@ export default class UIManager {
     }
     if (this.elements.attackBandwidthValue) {
       this.elements.attackBandwidthValue.textContent = `${attackBandwidth.toFixed(1)}x`;
+    }
+    
+    // Update attacker icon based on device count
+    if (this.elements.attackerIcon) {
+      let icon;
+      if (deviceCount === 1) {
+        icon = '👤'; // Single person (DoS)
+      } else if (deviceCount < 10) {
+        icon = '👥'; // Two people
+      } else if (deviceCount < 50) {
+        icon = '👨‍👩‍👧‍👦'; // Small group
+      } else if (deviceCount < 200) {
+        icon = '🏘️'; // Houses (botnet)
+      } else {
+        icon = '🌐'; // Global network (large-scale DDoS)
+      }
+      this.elements.attackerIcon.textContent = icon;
     }
   }
 
