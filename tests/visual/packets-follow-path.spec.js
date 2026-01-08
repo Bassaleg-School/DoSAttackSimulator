@@ -121,9 +121,9 @@ test.describe('Canvas Rendering - Packet Trajectory', () => {
     await page.waitForTimeout(500);
 
     // Configure deterministic attack
-    await page.fill('#slider-device-count', '20');
+    await page.locator('#slider-device-count').fill('20');
     await page.selectOption('#dropdown-attack-type', 'UDP');
-    await page.fill('#slider-bandwidth-multiplier', '1.0');
+    await page.locator('#slider-bandwidth-multiplier').fill('1.0');
     
     // Start attack
     await page.click('#btn-start-attack');
